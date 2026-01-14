@@ -1,0 +1,231 @@
+<InstallerConfig>
+  <Settings>
+    <Theme>Dark</Theme>
+  </Settings>
+
+  <WingetApps>
+    <Category Name="Utilities">
+      <App Name="AnyDesk" Id="AnyDesk.AnyDesk" />
+      <App Name="Chrome Remote Desktop Host" Id="Google.ChromeRemoteDesktopHost" />
+      <App Name="7-Zip" Id="7zip.7zip" />
+      <App Name="BleachBit" Id="BleachBit.BleachBit" />
+      <App Name="CCleaner" Id="Piriform.CCleaner.ProTrial" />
+      <App Name="CPUID CPU-Z" Id="CPUID.CPU-Z" />
+      <App Name="GNU Nano" Id="GNU.Nano" />
+      <App Name="KDE Connect" Id="KDE.KDEConnect" />
+      <App Name="Meld" Id="Meld.Meld" />
+      <App Name="NanaZip" Id="M2Team.NanaZip" />
+      <App Name="PowerToys" Id="Microsoft.PowerToys" />
+      <App Name="Quick Share from Google" Id="Google.QuickShare" />
+      <App Name="Rufus" Id="Rufus.Rufus" />
+      <App Name="Ventoy" Id="Ventoy.Ventoy" />
+      <App Name="WinDirStat" Id="WinDirStat.WinDirStat" />
+      <App Name="Windows Terminal" Id="Microsoft.WindowsTerminal" />
+      <App Name="balenaEtcher" Id="Balena.Etcher" />
+      <App Name="TeamViewer" Id="TeamViewer.TeamViewer" />
+      <App Name="WinSCP" Id="WinSCP.WinSCP" />
+      <App Name="Everything" Id="voidtools.Everything" />
+      <App Name="TreeSize Free" Id="JAMSoftware.TreeSize.Free" />
+      <App Name="HWMonitor" Id="CPUID.HWMonitor" />
+      <App Name="HWiNFO" Id="REALiX.HWiNFO" />
+      <App Name="Revo Uninstaller" Id="RevoUninstaller.RevoUninstaller" />
+    </Category>
+
+    <Category Name="Development">
+      <App Name="Anaconda3" Id="Anaconda.Anaconda3" />
+      <App Name="VS Code" Id="Microsoft.VisualStudioCode" />
+      <App Name="Visual Studio Community 2026" Id="Microsoft.VisualStudio.Community" />
+      <App Name="Git Extensions" Id="GitExtensionsTeam.GitExtensions" />
+      <App Name="Git" Id="Git.Git" />
+      <App Name="GitHub CLI" Id="GitHub.cli" />
+      <App Name="GitHub Desktop" Id="GitHub.GitHubDesktop" />
+      <App Name="Java 8 RE" Id="Oracle.JavaRuntimeEnvironment" />
+      <App Name="Java SE" Id="Oracle.JDK.25" /> <App Name="Node JS" Id="OpenJS.NodeJS" />
+      <App Name="JetBrains Toolbox" Id="JetBrains.Toolbox" />
+      <App Name="Python Launcher" Id="Python.Launcher" />
+      <App Name="APK Editor Studio" Id="AlexanderGorishnyak.APKEditorStudio" />
+      <App Name="Inno Setup" Id="JRSoftware.InnoSetup" />
+      <App Name="Unity" Id="Unity.Unity.2022" />
+      <App Name="Godot Engine" Id="GodotEngine.GodotEngine" />
+      <App Name="Resource Hacker" Id="AngusJohnson.ResourceHacker" />
+      <App Name="Postman" Id="Postman.Postman" />
+      <App Name="CMake" Id="Kitware.CMake" />
+      <App Name="Java SE 21 (LTS)" Id="Oracle.JDK.21" />
+      <App Name="Python 3.12" Id="Python.Python.3.12" />
+    </Category>
+
+    <Category Name="Design">
+      <App Name="ComfyUI" Id="Comfy.ComfyUI-Desktop" />
+      <App Name="Converseen" Id="Faster3ck.Converseen" />
+      <App Name="GIMP (Stable)" Id="GIMP.GIMP.3" />
+      <App Name="GIMP (Nightly)" Id="GIMP.GIMP.Nightly" />
+      <App Name="Inkscape" Id="Inkscape.Inkscape" />
+      <App Name="Krita" Id="KDE.Krita" />
+      <App Name="Blender" Id="BlenderFoundation.Blender" />
+      <App Name="IcoFX" Id="IcoFXSoftware.icofx" />
+      <App Name="Paint.NET" Id="dotPDN.PaintDotNet" />
+      <App Name="Figma" Id="Figma.Figma" />
+      <App Name="ShareX" Id="ShareX.ShareX" />
+      <App Name="PicPick" Id="NGWIN.PicPick" />
+	  <App Name="LibreCAD" Id="LibreCAD.LibreCAD" />
+      <App Name="Autodesk Access" Id="Autodesk.AutodeskAccess" />
+    </Category>
+
+    <Category Name="Media">
+      <App Name="AIMP" Id="AIMP.AIMP" />
+      <App Name="Audacity" Id="Audacity.Audacity" />
+      <App Name="HandBrake" Id="HandBrake.HandBrake" />
+      <App Name="K-Lite Codec Pack Std" Id="CodecGuide.K-LiteCodecPack.Standard" />
+      <App Name="Shotcut" Id="Meltytech.Shotcut" />
+      <App Name="Kdenlive" Id="KDE.Kdenlive" />
+      <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
+      <App Name="ImageGlass" Id="DuongDieuPhap.ImageGlass" />
+      <App Name="OpenShot" Id="OpenShot.OpenShot" />
+      <App Name="MP3Tag" Id="FlorianHeidenreich.Mp3tag" />
+      <App Name="MKVToolNix" Id="MoritzBunkus.MKVToolNix" />
+      <App Name="VLC media player" Id="VideoLAN.VLC" />
+      <App Name="Spotify" Id="Spotify.Spotify" />
+      <App Name="iTunes" Id="Apple.iTunes" />
+      <App Name="PotPlayer" Id="Daum.PotPlayer" />
+      <App Name="FFmpeg" Id="Gyan.FFmpeg" />
+    </Category>
+
+    <Category Name="Games">
+      <App Name="Epic Games Launcher" Id="EpicGames.EpicGamesLauncher" />
+      <App Name="Steam" Id="Valve.Steam" />
+      <App Name="Vortex" Id="NexusMods.Vortex" />
+      <App Name="EA App" Id="ElectronicArts.EADesktop" />
+      <App Name="Ubisoft Connect" Id="Ubisoft.Connect" />
+      <App Name="GOG Galaxy" Id="GOG.Galaxy" />
+      <App Name="Prism Launcher" Id="PrismLauncher.PrismLauncher" />
+    </Category>
+
+    <Category Name="Internet">
+      <App Name="Google Chrome" Id="Google.Chrome" />
+      <App Name="Opera" Id="Opera.Opera" />
+      <App Name="Firefox" Id="Mozilla.Firefox" />
+      <App Name="Tor Browser" Id="TorProject.TorBrowser" />
+      <App Name="Vivaldi" Id="Vivaldi.Vivaldi" />
+      <App Name="Google Drive" Id="Google.GoogleDrive" />
+      <App Name="Xtreme Download Manager" Id="subhra74.XtremeDownloadManager.Beta" />
+      <App Name="qBittorrent" Id="c0re100.qBittorrent-Enhanced-Edition" />
+      <App Name="Megasync" Id="Mega.MEGASync" />
+      <App Name="Brave Browser" Id="Brave.Brave" />
+      <App Name="Thunderbird" Id="Mozilla.Thunderbird" />
+    </Category>
+
+    <Category Name="Communication">
+      <App Name="Discord" Id="Discord.Discord" />
+      <App Name="Element" Id="Element.Element" />
+      <App Name="Ferdium" Id="Ferdium.Ferdium" />
+      <App Name="Signal" Id="OpenWhisperSystems.Signal" />
+      <App Name="Slack" Id="SlackTechnologies.Slack" />
+      <App Name="Zoom" Id="Zoom.Zoom" />
+      <App Name="Telegram Desktop" Id="Telegram.TelegramDesktop" />
+      <App Name="WhatsApp" Id="9NKSQGP7F2NH" />
+      <App Name="Microsoft Teams" Id="Microsoft.Teams" />
+    </Category>
+
+    <Category Name="Virtualization">
+      <App Name="Oracle VirtualBox" Id="Oracle.VirtualBox" />
+      <App Name="QEMU" Id="SoftwareFreedomConservancy.QEMU" />
+      <App Name="BlueStacks" Id="BlueStack.BlueStacks" />
+      <App Name="Docker Desktop" Id="Docker.DockerDesktop" />
+      <App Name="XAMPP 8.2" Id="ApacheFriends.Xampp.8.2" />
+      <App Name="NVIDIA Omniverse" Id="Nvidia.Omniverse" />
+    </Category>
+
+    <Category Name="Office">
+      <App Name="Kate" Id="KDE.Kate" />
+      <App Name="Notepad++" Id="Notepad++.Notepad++" />
+      <App Name="Joplin" Id="Joplin.Joplin" />
+      <App Name="Obsidian" Id="Obsidian.Obsidian" />
+      <App Name="MComix" Id="MComix.MComix" />
+      <App Name="Okular" Id="KDE.Okular" />
+      <App Name="OnlyOffice" Id="ONLYOFFICE.DesktopEditors" />
+      <App Name="OpenOffice" Id="Apache.OpenOffice" />
+      <App Name="WPS Office" Id="Kingsoft.WPSOffice" />
+      <App Name="LibreOffice" Id="TheDocumentFoundation.LibreOffice" />
+      <App Name="Notion" Id="Notion.Notion" />
+      <App Name="Adobe Acrobat Reader DC" Id="Adobe.Acrobat.Reader.64-bit" />
+      <App Name="Foxit PDF Reader" Id="Foxit.FoxitReader" />
+    </Category>
+
+    <Category Name="Framework">
+      <App Name=".NET Runtime 3.1" Id="Microsoft.DotNet.Runtime.3_1" />
+      <App Name=".NET Runtime 5" Id="Microsoft.DotNet.Runtime.5" />
+      <App Name=".NET Runtime 6" Id="Microsoft.DotNet.Runtime.6" />
+      <App Name=".NET Runtime 7" Id="Microsoft.DotNet.Runtime.7" />
+      <App Name=".NET Runtime 8" Id="Microsoft.DotNet.Runtime.8" />
+      <App Name=".NET Runtime 9" Id="Microsoft.DotNet.Runtime.Preview" />
+      <App Name="Desktop Runtime 3.1" Id="Microsoft.DotNet.DesktopRuntime.3_1" />
+      <App Name="Desktop Runtime 5" Id="Microsoft.DotNet.DesktopRuntime.5" />
+      <App Name="Desktop Runtime 6" Id="Microsoft.DotNet.DesktopRuntime.6" />
+      <App Name="Desktop Runtime 7" Id="Microsoft.DotNet.DesktopRuntime.7" />
+      <App Name="Desktop Runtime 8" Id="Microsoft.DotNet.DesktopRuntime.8" />
+      <App Name="Desktop Runtime 9" Id="Microsoft.DotNet.DesktopRuntime.Preview" />
+      <App Name="DirectX End-User" Id="Microsoft.DirectX --force" />
+      <App Name="VC++ 2005 x64" Id="Microsoft.VCRedist.2005.x64" />
+      <App Name="VC++ 2005 x86" Id="Microsoft.VCRedist.2005.x86 --force" />
+      <App Name="VC++ 2008 x64" Id="Microsoft.VCRedist.2008.x64" />
+      <App Name="VC++ 2008 x86" Id="Microsoft.VCRedist.2008.x86" />
+      <App Name="VC++ 2010 x64" Id="Microsoft.VCRedist.2010.x64" />
+      <App Name="VC++ 2010 x86" Id="Microsoft.VCRedist.2010.x86" />
+      <App Name="VC++ 2012 x64" Id="Microsoft.VCRedist.2012.x64" />
+      <App Name="VC++ 2012 x86" Id="Microsoft.VCRedist.2012.x86" />
+      <App Name="VC++ 2013 x64" Id="Microsoft.VCRedist.2013.x64" />
+      <App Name="VC++ 2013 x86" Id="Microsoft.VCRedist.2013.x86" />
+      <App Name="VC++ 2015-2022 x64" Id="Microsoft.VCRedist.2015+.x64" />
+      <App Name="VC++ 2015-2022 x86" Id="Microsoft.VCRedist.2015+.x86" />
+      <App Name="Microsoft MPI" Id="Microsoft.msmpi" />
+      <App Name="Microsoft .NET SDK 3.1" Id="Microsoft.DotNet.SDK.3_1" />
+      <App Name="Microsoft .NET SDK 5" Id="Microsoft.DotNet.SDK.5" />
+      <App Name="Microsoft .NET SDK 6" Id="Microsoft.DotNet.SDK.6" />
+      <App Name="Microsoft .NET SDK 7" Id="Microsoft.DotNet.SDK.7" />
+      <App Name="Microsoft .NET SDK 8" Id="Microsoft.DotNet.SDK.8" />
+      <App Name="Microsoft .NET SDK 9" Id="Microsoft.DotNet.SDK.9" />
+      <App Name="Microsoft .NET SDK 10" Id="Microsoft.DotNet.SDK.10" />
+      <App Name="Microsoft .NET SDK Preview" Id="Microsoft.DotNet.SDK.Preview" />
+      <App Name="OpenJDK 17 (LTS)" Id="Microsoft.OpenJDK.17" />
+    </Category>
+
+    <Category Name="Miscellaneous">
+      <App Name="PowerShell 7-x64" Id="Microsoft.PowerShell" />
+      <App Name="gsudo" Id="gerardog.gsudo" />
+      <App Name="neofetch-win" Id="nepnep.neofetch-win" />
+      <App Name="starship" Id="Starship.Starship" />
+      <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
+      <App Name="Windhawk" Id="RamenSoftware.Windhawk" />
+      <App Name="Mica For Everyone" Id="MicaForEveryone.MicaForEveryone" />
+      <App Name="System Informer" Id="WinsiderSS.SystemInformer" />
+      <App Name="Sysinternals Suite" Id="Microsoft.Sysinternals.Suite" />
+    </Category>
+  </WingetApps>
+
+
+  <LocalApps>
+    <App Name="Snappy Driver Installer (Network)"
+         Path="Programs\SDI\SDI64-drv.exe"
+         Args="-R -c -filter:&quot;LAN,WLAN&quot;" />
+    <App Name="15 Second ADB Installer" Path="Programs\15_Second_ADB_Installer.exe" />
+    <App Name="ABBYY Fine Reader Corporate" Path="Programs\ABBYYFineReaderCorporate.exe" />
+    <App Name="Adobe Illustrator" Path="Programs\AdobeIllustrator.exe" />
+    <App Name="Adobe Photoshop" Path="Programs\AdobePhotoshop.exe" />
+    <App Name="Adobe Premiere Pro" Path="Programs\AdobePremierePro.exe" />
+    <App Name="WinRAR" Path="Programs\WinRAR.exe" />
+    <App Name="Auto Keyboard" Path="Programs\Auto-Keyboard.exe" />
+    <App Name="FileZilla" Path="Programs\FileZilla.exe" />
+    <App Name="Foxit PDF Editor" Path="Programs\FoxitPDFEditor.exe" />
+    <App Name="MS Office Installer+" Path="Programs\Office_Installer+.exe" />
+    <App Name="PSDCodec" Path="Programs\PSDCodec.exe" />
+    <App Name="PowerISO" Path="Programs\PowerISO.exe" />
+    <App Name="Topaz Gigapixel AI" Path="Programs\TopazGigapixelAI.exe" />
+    <App Name="Topaz Photo AI" Path="Programs\TopazPhotoAI.exe" />
+    <App Name="Topaz Video AI" Path="Programs\TopazVideoAI.exe" />
+    <App Name="Java Runtime" Path="Programs\Java8.exe" />
+    <App Name="Rectify 11" Path="Programs\Rectify11Installer.exe" />
+    <App Name="PowerShell Tweaks" Path="Programs\PowerShell_Tweaks.exe" />
+    <App Name="Wallpaper Pack" Path="Programs\Wallpaper_Pack.exe" />
+    <App Name="WinTweak Lab" Path="Programs\WinTweak_Lab.exe" />
+  </LocalApps>
+</InstallerConfig>
