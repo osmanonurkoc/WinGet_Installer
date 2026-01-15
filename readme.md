@@ -30,9 +30,9 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
 
 * **Bulk Installation:** Install dozens of apps defined in `config.xml` with a single click.
 * **Repository Search (New):** * **Live Filter:** Instantly filter through the cached Winget repository as you type.
-    * **Online Search:** Press `ENTER` to perform a deep search across Winget and MSStore sources to find any application.
+  * **Online Search:** Press `ENTER` to perform a deep search across Winget and MSStore sources to find any application.
 * **Backup & Restore (New):** * **Export:** Create a snapshot of your installed software (JSON format).
-    * **Restore:** Restore your software suite on a fresh Windows installation using the backup file.
+  * **Restore:** Restore your software suite on a fresh Windows installation using the backup file.
 * **Smart Source Repair:** Automatically detects and fixes Winget 404 errors and Source Certification errors (0x8a15005e).
 * **Modern UI:** A clean WPF interface with a built-in Dark/Light theme toggle.
 * **Local App Support:** Can trigger local `.exe` or `.msi` installers from a `Programs` folder.
