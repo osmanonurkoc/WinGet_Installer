@@ -8,6 +8,7 @@
         - Backup & Restore installed packages (JSON).
         - Dark/Light mode support with system integration.
         - Async operations to prevent UI freezing.
+        - Live Progress Bar for Restore operations.
 
     .NOTES
         Author:  Osman Onur Koç
@@ -66,6 +67,7 @@ $script:RepoCache = @()
 $script:isRepoFetched = $false
 $script:activeProcess = $null
 $script:activeOperation = ""
+$script:RestoreQueue = @() # Queue for restoring apps one by one
 
 # --- TIMER (ASYNC HANDLER) ---
 $timer = New-Object System.Windows.Threading.DispatcherTimer
@@ -105,6 +107,23 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(200)
                                     <Thumb x:Name="Thumb" Background="{TemplateBinding Foreground}" Style="{DynamicResource ScrollThumbStyle}"/>
                                 </Track.Thumb>
                             </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -477,11 +496,12 @@ function Set-Theme {
 $timer.Add_Tick({
     if ($script:activeProcess -ne $null) {
         if ($script:activeProcess.HasExited) {
-            $timer.Stop()
-            $pbInstall.IsIndeterminate = $false
+            $script:activeProcess = $null # Reset immediately
 
-            # PROCESS FETCH
+            # --- FETCH ---
             if ($script:activeOperation -eq "Fetch") {
+                $timer.Stop()
+                $pbInstall.IsIndeterminate = $false
                 $tempFile = "$env:TEMP\winget_all_cache.tmp"
                 if (Test-Path $tempFile) {
                     $lines = Get-Content $tempFile -Encoding UTF8
@@ -504,8 +524,10 @@ $timer.Add_Tick({
                 }
                 $btnUpdateRepo.IsEnabled = $true; $txtSearch.IsEnabled = $true
             }
-            # PROCESS ONLINE SEARCH
+            # --- ONLINE SEARCH ---
             elseif ($script:activeOperation -eq "OnlineSearch") {
+                $timer.Stop()
+                $pbInstall.IsIndeterminate = $false
                 $tempFile = "$env:TEMP\winget_online_search.tmp"
                 if (Test-Path $tempFile) {
                     $lines = Get-Content $tempFile -Encoding UTF8
@@ -525,7 +547,35 @@ $timer.Add_Tick({
                     $txtStatusFooter.Text = "Online Search: $($newResults.Count) results."
                 }
             }
-            $script:activeProcess = $null
+            # --- RESTORE LOOP ---
+            elseif ($script:activeOperation -eq "RestoreLoop") {
+                # Process finished, update progress
+                $pbInstall.Value += 1
+
+                if ($script:RestoreQueue.Count -gt 0) {
+                    # Dequeue next
+                    $nextApp = $script:RestoreQueue[0]
+                    $script:RestoreQueue = $script:RestoreQueue[1..($script:RestoreQueue.Count - 1)]
+
+                    # Start next process
+                    $txtStatusFooter.Text = "Restoring: $($nextApp.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
+                    $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($nextApp.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -PassThru
+                } else {
+                    # Done
+                    $timer.Stop()
+                    $pbInstall.IsIndeterminate = $false
+                    $txtStatusFooter.Text = "Restore completed."
+                    $txtBackupStatus.Text = "Restore completed."
+                    [System.Windows.Forms.MessageBox]::Show("Restore Completed Successfully!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+                }
+            }
+            # --- BACKUP ---
+            elseif ($script:activeOperation -eq "Backup") {
+                 $timer.Stop()
+                 $pbInstall.IsIndeterminate = $false
+                 $txtBackupStatus.Text = "Backup completed successfully."
+                 [System.Windows.Forms.MessageBox]::Show("Backup Saved!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+            }
         }
     }
 })
@@ -613,7 +663,7 @@ $tabFixedTools.Add_SelectionChanged({
     elseif ($tabFixedTools.SelectedItem -eq $tabBackup) { Switch-View "Backup" }
 })
 
-# --- LOCAL APPS (FIXED) ---
+# --- LOCAL APPS (ROBUST FIX) ---
 if ($configLoaded -and $config.InstallerConfig.LocalApps.App) {
     # Ensure it's an array to handle single items correctly
     $localApps = @($config.InstallerConfig.LocalApps.App)
@@ -663,18 +713,34 @@ function Install-Apps($list) {
 $btnBackup.Add_Click({
     $sfd = New-Object System.Windows.Forms.SaveFileDialog; $sfd.Filter = "JSON|*.json"; $sfd.FileName = "backup.json"
     if ($sfd.ShowDialog() -eq "OK") {
-        $txtBackupStatus.Text = "Exporting..."; $pbInstall.IsIndeterminate = $true; [System.Windows.Forms.Application]::DoEvents()
-        Start-Process "winget" "export -o `"$($sfd.FileName)`"" -NoNewWindow -Wait
-        $txtBackupStatus.Text = "Saved."; $pbInstall.IsIndeterminate = $false
+        $txtBackupStatus.Text = "Exporting (Async)..."
+        Start-AsyncProcess "export -o `"$($sfd.FileName)`" --include-versions" "Backup" $null
     }
 })
 
 $btnRestore.Add_Click({
     $ofd = New-Object System.Windows.Forms.OpenFileDialog; $ofd.Filter = "JSON|*.json"
     if ($ofd.ShowDialog() -eq "OK") {
-        $txtBackupStatus.Text = "Restoring..."; $pbInstall.IsIndeterminate = $true; [System.Windows.Forms.Application]::DoEvents()
-        Start-Process "winget" "import -i `"$($ofd.FileName)`" --accept-package-agreements" -NoNewWindow -Wait
-        $txtBackupStatus.Text = "Done."; $pbInstall.IsIndeterminate = $false
+        $txtBackupStatus.Text = "Reading Backup File..."
+
+        try {
+            $jsonContent = Get-Content $ofd.FileName | ConvertFrom-Json
+            if ($jsonContent.Sources.Packages) {
+                # Load Queue
+                $script:RestoreQueue = @($jsonContent.Sources.Packages)
+                $pbInstall.IsIndeterminate = $false
+                $pbInstall.Maximum = $script:RestoreQueue.Count
+                $pbInstall.Value = 0
+
+                # Start Loop (Trigger Timer with first item)
+                $script:activeOperation = "RestoreLoop"
+                $timer.Start()
+                # Kickstart loop by setting a dummy "exited" process so Tick catches it
+                $script:activeProcess = [PSCustomObject]@{ HasExited = $true }
+            }
+        } catch {
+            [System.Windows.Forms.MessageBox]::Show("Invalid JSON File!", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+        }
     }
 })
 
