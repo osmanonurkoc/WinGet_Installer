@@ -1,17 +1,16 @@
 <#
-    === WIN-GET INSTALLER ===
-    Author: Osman Onur Koc
+    === WIN-GET INSTALLER (PRO) ===
+    Author: Osman Onur Koc (Updated with Search & Backup)
     Repo: https://github.com/osmanonurkoc/WinGet_Installer
     License: MIT License
 
-    Features:
-    1. Console Hiding: Hides the background console window for a clean GUI experience.
-    2. Nuclear Repair: Automatically resolves source errors (0x8a15005e) and updates Winget if needed.
-    3. GUI Fixes: Solves character encoding and dark mode DWM API issues.
-    4. Configuration: Fully driven by an external config.xml file.
+    New Features:
+    1. Search Repository: Search and install apps from Winget/MSStore dynamically.
+    2. Backup & Restore: Export installed packages to JSON and restore them.
+    3. Console Hiding & Dark Mode support.
 #>
 
-# Set console output encoding to UTF-8 to fix character display issues
+# Set console output encoding to UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Required Assemblies
@@ -23,7 +22,6 @@ using System;
 using System.Runtime.InteropServices;
 
 public class Win32 {
-    // Console Hiding APIs
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
 
@@ -33,7 +31,6 @@ public class Win32 {
     public const int SW_HIDE = 0;
     public const int SW_SHOW = 5;
 
-    // DWM Dark Mode APIs
     [DllImport("dwmapi.dll", PreserveSig = true)]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
@@ -50,18 +47,14 @@ if (-not ([System.Management.Automation.PSTypeName]'Win32').Type) {
     Add-Type -TypeDefinition $code -Language CSharp
 }
 
-# --- HIDE CONSOLE WINDOW IMMEDIATELY ---
+# --- HIDE CONSOLE WINDOW ---
 $hwnd = [Win32]::GetConsoleWindow()
-if ($hwnd -ne [IntPtr]::Zero) {
-    [Win32]::ShowWindow($hwnd, 0) # 0 = SW_HIDE
-}
+if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 0) }
 
-# --- 1. PATH DETECTION LOGIC (SFX/EXE SUPPORT) ---
-# Determines if the script is running standalone or within a nested directory structure (SFX).
+# --- PATH DETECTION ---
 $ScriptDir = $PSScriptRoot
 $xmlPathOverride = $null
 
-# FIX: Reverted to checking 'Programs' folder first to ensure correct root detection
 if (-not (Test-Path "$ScriptDir\Programs")) {
     try {
         $currentId = $PID
@@ -72,17 +65,7 @@ if (-not (Test-Path "$ScriptDir\Programs")) {
             if ($parentProcObj) {
                 $parentPath = $parentProcObj.Path
                 $OriginalDir = Split-Path $parentPath -Parent
-
-                # Check if Programs folder is in the Parent (EXE) directory
-                if (Test-Path "$OriginalDir\Programs") {
-                    $ScriptDir = $OriginalDir
-                    # Check for config.xml in the same valid root
-                    if (Test-Path "$OriginalDir\config.xml") {
-                        $xmlPathOverride = "$OriginalDir\config.xml"
-                    }
-                }
-                # Fallback: If no Programs folder, but config exists (Winget only mode)
-                elseif (Test-Path "$OriginalDir\config.xml") {
+                if (Test-Path "$OriginalDir\config.xml") {
                      $ScriptDir = $OriginalDir
                      $xmlPathOverride = "$OriginalDir\config.xml"
                 }
@@ -94,22 +77,18 @@ if (-not (Test-Path "$ScriptDir\Programs")) {
 # --- XML CHECK ---
 if ($xmlPathOverride) { $xmlPath = $xmlPathOverride } else { $xmlPath = "$PSScriptRoot\config.xml" }
 
-if (-not (Test-Path $xmlPath)) {
-    # Since the console is hidden, we must use a MessageBox for errors.
-    [System.Windows.Forms.MessageBox]::Show("config.xml not found!`nPlease ensure the configuration file is in the script directory.`n`nSearched at: $xmlPath", "Configuration Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-    exit
-}
-
-# FIX: Added -Raw to ensure the XML is read as a single string
-try {
-    [xml]$config = Get-Content $xmlPath -Raw -ErrorAction Stop
-} catch {
-    [System.Windows.Forms.MessageBox]::Show("Error reading config.xml:`n$($_.Exception.Message)", "XML Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-    exit
+# Create dummy config if not exists (to allow Search/Backup mode to work without config)
+$configLoaded = $false
+if (Test-Path $xmlPath) {
+    try {
+        [xml]$config = Get-Content $xmlPath -Raw -ErrorAction Stop
+        $configLoaded = $true
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Error reading config.xml:`n$($_.Exception.Message)", "XML Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+    }
 }
 
 # --- GLOBAL SELECTION STATE ---
-# Stores the checked state of apps across tab switches.
 $script:selectionState = @{}
 
 # --- XAML UI ---
@@ -117,7 +96,7 @@ $script:selectionState = @{}
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Windows Software Installer @osmanonurkoc" Height="760" Width="1150"
+    Title="Windows Package Manager UI @osmanonurkoc" Height="850" Width="1200"
     WindowStartupLocation="CenterScreen"
     Background="{DynamicResource BgBase}">
 
@@ -186,9 +165,6 @@ $script:selectionState = @{}
                                 <Setter TargetName="check" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             </Trigger>
-                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -212,6 +188,9 @@ $script:selectionState = @{}
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="brd" Property="Background" Value="{DynamicResource BgHover}"/>
+                            </Trigger>
+                             <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -265,6 +244,24 @@ $script:selectionState = @{}
             </Setter>
         </Style>
 
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Viewbox x:Key="IconMoon">
             <Path Fill="{DynamicResource IconBrush}" Stretch="Uniform" Data="m 69.492851,31.587218 q 1.201475,0 2.170408,-0.581359 1.007692,-0.620117 1.589051,-1.58905 0.620117,-1.00769 0.620117,-2.209168 0,-1.240234 -0.620117,-2.209167 -0.581359,-1.00769 -1.589051,-1.589051 -0.968933,-0.620117 -2.170408,-0.620117 -1.201479,0 -2.209168,0.620117 -1.00769,0.581361 -1.589051,1.589051 -0.581361,0.968933 -0.581361,2.209167 0,1.201478 0.581361,2.209168 0.581361,0.968933 1.589051,1.58905 1.007689,0.581359 2.209168,0.581359 z M 33.409783,67.554014 q 1.201476,0 2.170409,-0.620117 1.007689,-0.581359 1.58905,-1.589048 0.620117,-0.968933 0.620117,-2.170411 0,-1.240235 -0.620117,-2.209168 -0.581361,-1.007689 -1.58905,-1.58905 -0.968933,-0.620118 -2.170409,-0.620118 -1.201478,0 -2.209168,0.620118 -1.007692,0.581361 -1.58905,1.58905 -0.581361,0.968933 -0.581361,2.209168 0,1.201478 0.581361,2.170411 0.581358,1.007689 1.58905,1.589048 1.00769,0.620117 2.209168,0.620117 z M 73.639885,42.28424 q 0,-0.736389 -0.387575,-1.356506 -0.387572,-0.658876 -1.00769,-1.007689 -0.620117,-0.387575 -1.395264,-0.387575 -0.736388,0 -1.395264,0.387575 -0.620117,0.348813 -1.00769,1.007689 -0.348816,0.620117 -0.348816,1.356506 0,0.775147 0.348816,1.43402 0.387573,0.620117 1.00769,1.007692 0.658876,0.348816 1.395264,0.348816 0.775147,0 1.395264,-0.348816 0.620118,-0.387575 1.00769,-1.007692 0.387575,-0.658873 0.387575,-1.43402 z M 56.896721,61.856688 q 2.325439,0 4.224546,-1.123963 1.899111,-1.123961 3.023074,-3.023071 1.162719,-1.937866 1.162719,-4.224546 0,-2.325442 -1.162719,-4.224549 -1.123963,-1.899108 -3.023074,-3.023071 -1.899107,-1.16272 -4.224546,-1.16272 -2.286683,0 -4.224549,1.16272 -1.899108,1.123963 -3.023071,3.023071 -1.123963,1.899107 -1.123963,4.224549 0,2.28668 1.123963,4.224546 1.123963,1.89911 3.023071,3.023071 1.937866,1.123963 4.224549,1.123963 z M 55.966544,9.1467283 v 0 q 0.891418,3.6431877 0.968933,7.5964357 0.07751,3.953248 -0.930174,8.139038 -1.47278,6.356202 -5.270998,11.627197 -3.798218,5.232238 -9.224243,8.759155 -5.426024,3.488159 -11.820982,4.650878 v 0 Q 24.418083,50.888365 19.53466,50.268248 14.651238,49.609375 10.310417,47.749023 7.7911898,46.62506 5.4657511,47.361451 3.1790695,48.097839 1.8225632,49.725646 0.46605668,51.27594 0.07848364,53.562623 q -0.34881608,2.28668 0.85266106,4.534606 v 0 q 3.7594592,6.93756 9.6505733,12.169799 5.929871,5.232238 13.410033,8.177794 7.480165,2.984315 15.851746,3.023074 h 0.658876 q 2.906797,0 5.813597,-0.387575 v 0 q 7.480165,-1.00769 14.030153,-4.379577 6.549988,-3.33313 11.665952,-8.565369 5.115968,-5.193482 8.371584,-11.782226 3.255616,-6.627503 4.147034,-14.107666 h 0.03876 Q 85.499626,33.990174 83.639275,26.432494 81.817679,18.874817 77.670645,12.557374 73.56237,6.2011718 67.710014,1.5890502 l -0.03876,-0.038757 v 0 Q 65.617118,0 63.330435,0 61.082511,0 59.183403,1.2014769 57.284293,2.402954 56.31536,4.4958494 55.346427,6.5499876 55.966544,9.1467283 Z M 30.658013,55.422974 q 7.518919,-1.356508 13.836364,-5.464783 6.356199,-4.108278 10.774535,-10.231935 4.418335,-6.123657 6.201171,-13.565063 0.891419,-3.836974 1.007692,-7.518921 0.155028,-3.681944 -0.348816,-7.208861 -0.03876,-0.07752 -0.07752,-0.193787 0,-0.116273 0,-0.193786 -0.15503,-0.930176 -0.31006,-1.7828378 l -0.03876,-0.077514 q -0.15503,-0.7363892 -0.31006,-1.3565063 -0.271301,-1.2402344 0.775148,-1.8991091 1.085204,-0.6976319 2.092896,0.038758 0.620117,0.503845 1.085204,0.8914183 v 0 q 0.736389,0.6201172 1.511536,1.3565063 0.31006,0.2713014 0.426331,0.4263305 6.317443,6.0849001 9.573059,14.6502691 3.294372,8.565369 2.131652,18.293455 -0.775147,6.549988 -3.643188,12.324829 -2.829285,5.774843 -7.325135,10.348206 -4.495847,4.534606 -10.231932,7.441406 -5.697328,2.945559 -12.208557,3.836977 Q 37.750594,76.584472 30.619245,74.72412 23.526655,72.902527 17.6743,68.755493 11.8607,64.647218 7.9074546,58.794862 7.7911808,58.639832 7.5586386,58.291016 7.0160364,57.477113 6.4734341,56.546936 l -0.038759,-0.03876 Q 6.0858683,55.926818 5.853326,55.46173 5.2332088,54.299011 6.0471121,53.330078 q 0.8526595,-1.00769 2.0153815,-0.465088 0.6976295,0.271302 1.4727766,0.581359 v 0 q 0.8139038,0.31006 1.6278088,0.581361 0.116272,0.03876 0.193787,0.07751 0.116271,0.03876 0.193786,0.07752 4.418335,1.43402 9.224242,1.821593 4.844667,0.348816 9.883119,-0.581359 z" />
         </Viewbox>
@@ -285,13 +282,14 @@ $script:selectionState = @{}
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    <RowDefinition Height="Auto"/> </Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/> <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="{DynamicResource BgBase}" Padding="25,20">
             <Grid>
                 <StackPanel Orientation="Horizontal">
                     <ContentControl Content="{StaticResource IconPackage}" Width="32" Height="32" Margin="0,0,12,0"/>
-                    <TextBlock Text="Software Setup" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Package Manager Pro" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                     <TextBlock Name="txtAuthorLink" Text=" | www.osmanonurkoc.com" FontSize="14" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="5,4,0,0" Cursor="Hand"/>
                 </StackPanel>
                 <Button Name="btnThemeToggle" HorizontalAlignment="Right" Width="42" Height="42" Style="{StaticResource IconButton}">
@@ -302,66 +300,129 @@ $script:selectionState = @{}
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240"/> <ColumnDefinition Width="*"/>   <ColumnDefinition Width="300"/> </Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/> <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="{DynamicResource BgBase}" Padding="15,0">
-                <TabControl Name="tabCategories" BorderThickness="0" Background="Transparent" TabStripPlacement="Left" />
+                <StackPanel>
+                    <TabControl Name="tabCategories" BorderThickness="0" Background="Transparent" TabStripPlacement="Left">
+                        </TabControl>
+                    <Border Height="1" Background="{DynamicResource BorderColor}" Margin="10,15,10,15"/>
+                    <TabControl Name="tabFixedTools" BorderThickness="0" Background="Transparent" TabStripPlacement="Left">
+                        <TabItem Name="tabSearch" Header="Search Repo"/>
+                        <TabItem Name="tabBackup" Header="Backup &amp; Restore"/>
+                    </TabControl>
+                </StackPanel>
             </Border>
 
             <Border Grid.Column="1" Background="{DynamicResource BgCard}" CornerRadius="8" Margin="0,0,15,15" Padding="25">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
-                         <TextBlock Name="txtCategoryTitle" Text="Select Category" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                         <TextBlock Text="Choose applications to install from repo." FontSize="14" Foreground="{DynamicResource TextSecondary}" Margin="0,5,0,0"/>
-                    </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                         <StackPanel Name="pnlWingetContent" />
-                    </ScrollViewer>
-                </Grid>
-            </Border>
-
-            <Border Grid.Column="2" Background="{DynamicResource BgLayer}" Margin="0,0,15,15" CornerRadius="8" Padding="20">
                  <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock Text="Local Apps" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                        <TextBlock Text="Install .exe / .msi" FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
-                    </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Name="pnlLocalApps" />
-                    </ScrollViewer>
+                    <Grid Name="viewCategory" Visibility="Visible">
+                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/> <RowDefinition Height="Auto"/>
+                         </Grid.RowDefinitions>
+                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/> <ColumnDefinition Width="300"/>
+                         </Grid.ColumnDefinitions>
+
+                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,20">
+                             <TextBlock Name="txtCategoryTitle" Text="Select Category" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                             <TextBlock Text="Choose applications to install from config." FontSize="14" Foreground="{DynamicResource TextSecondary}" Margin="0,5,0,0"/>
+                         </StackPanel>
+
+                         <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                             <StackPanel Name="pnlWingetContent" />
+                         </ScrollViewer>
+
+                         <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Background="{DynamicResource BgLayer}" Margin="15,0,0,0" CornerRadius="8" Padding="20">
+                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                                    <TextBlock Text="Local Apps" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                    <TextBlock Text="Install .exe / .msi" FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Name="pnlLocalApps" />
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+                        <Button Name="btnInstall" Grid.Row="2" Grid.ColumnSpan="2" Content="INSTALL SELECTED (CONFIG)"
+                            FontWeight="Bold" Background="{DynamicResource Accent}"
+                            Foreground="{DynamicResource ButtonTextForeground}"
+                            FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0" HorizontalAlignment="Stretch">
+                             <Button.Resources>
+                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+
+                    <Grid Name="viewSearch" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/> <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                             <TextBlock Text="Search Repository" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                             <TextBlock Text="Search and install from Winget &amp; MSStore." FontSize="14" Foreground="{DynamicResource TextSecondary}" Margin="0,5,0,15"/>
+                             <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/> <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Name="txtSearch" Height="40" VerticalContentAlignment="Center" FontSize="14" />
+                                <Button Name="btnSearch" Grid.Column="1" Content="Search" Margin="10,0,0,0" Style="{StaticResource FluentButton}" />
+                             </Grid>
+                        </StackPanel>
+
+                        <ListView Name="lvSearchResults" Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextPrimary}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Select" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Name" Width="300" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="ID" Width="250" DisplayMemberBinding="{Binding Id}"/>
+                                    <GridViewColumn Header="Version" Width="100" DisplayMemberBinding="{Binding Version}"/>
+                                    <GridViewColumn Header="Source" Width="100" DisplayMemberBinding="{Binding Source}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <Button Name="btnInstallSearch" Grid.Row="2" Content="INSTALL CHECKED ITEMS"
+                            FontWeight="Bold" Background="{DynamicResource Accent}"
+                            Foreground="{DynamicResource ButtonTextForeground}"
+                            FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0">
+                             <Button.Resources>
+                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+
+                    <Grid Name="viewBackup" Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                             <TextBlock Text="Backup &amp; Restore" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+
+                             <Button Name="btnBackup" Content="EXPORT INSTALLED PACKAGES (JSON)" Width="350" Height="60" Margin="0,0,0,20" Style="{StaticResource FluentButton}" FontSize="16"/>
+                             <Button Name="btnRestore" Content="IMPORT &amp; RESTORE FROM FILE" Width="350" Height="60" Style="{StaticResource FluentButton}" FontSize="16"/>
+
+                             <TextBlock Name="txtBackupStatus" Text="Ready." Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
                 </Grid>
             </Border>
         </Grid>
 
         <Border Grid.Row="2" Background="{DynamicResource BgFooter}" Padding="20,15">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <ProgressBar Name="pbInstall" Height="6" Background="{DynamicResource BgInput}" Foreground="{DynamicResource Accent}" BorderThickness="0" Value="0" Margin="0,0,20,5"/>
-                    <TextBlock Name="txtStatusFooter" Text="Waiting for selection..." FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                </StackPanel>
-                <Button Name="btnInstall" Grid.Column="1" Content="INSTALL SELECTED"
-                        FontWeight="Bold" Background="{DynamicResource Accent}"
-                        Foreground="{DynamicResource ButtonTextForeground}"
-                        FontSize="14" Width="200" Height="45" Cursor="Hand">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                </Button>
-            </Grid>
+            <StackPanel VerticalAlignment="Center">
+                <ProgressBar Name="pbInstall" Height="6" Background="{DynamicResource BgInput}" Foreground="{DynamicResource Accent}" BorderThickness="0" Value="0" Margin="0,0,0,5"/>
+                <TextBlock Name="txtStatusFooter" Text="Waiting..." FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+            </StackPanel>
         </Border>
     </Grid>
 </Window>
@@ -371,12 +432,30 @@ $script:selectionState = @{}
 $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 try { $window = [Windows.Markup.XamlReader]::Load($reader) } catch { Write-Host $_; exit }
 
-# Controls
+# --- CONTROLS REFERENCES ---
 $tabCategories = $window.FindName("tabCategories")
+$tabFixedTools = $window.FindName("tabFixedTools")
+$tabSearch = $window.FindName("tabSearch")
+$tabBackup = $window.FindName("tabBackup")
+
+$viewCategory = $window.FindName("viewCategory")
+$viewSearch = $window.FindName("viewSearch")
+$viewBackup = $window.FindName("viewBackup")
+
 $pnlLocalApps = $window.FindName("pnlLocalApps")
 $btnInstall = $window.FindName("btnInstall")
 $pnlWingetContent = $window.FindName("pnlWingetContent")
 $txtCategoryTitle = $window.FindName("txtCategoryTitle")
+
+$txtSearch = $window.FindName("txtSearch")
+$btnSearch = $window.FindName("btnSearch")
+$lvSearchResults = $window.FindName("lvSearchResults")
+$btnInstallSearch = $window.FindName("btnInstallSearch")
+
+$btnBackup = $window.FindName("btnBackup")
+$btnRestore = $window.FindName("btnRestore")
+$txtBackupStatus = $window.FindName("txtBackupStatus")
+
 $txtStatusFooter = $window.FindName("txtStatusFooter")
 $pbInstall = $window.FindName("pbInstall")
 $btnThemeToggle = $window.FindName("btnThemeToggle")
@@ -425,8 +504,21 @@ function Set-Theme {
     }
 }
 
-# --- POPULATE CATEGORIES ---
-if ($config.InstallerConfig.WingetApps.Category) {
+# --- VIEW SWITCHING LOGIC ---
+function Switch-View($viewName) {
+    $viewCategory.Visibility = "Collapsed"
+    $viewSearch.Visibility = "Collapsed"
+    $viewBackup.Visibility = "Collapsed"
+
+    switch ($viewName) {
+        "Category" { $viewCategory.Visibility = "Visible" }
+        "Search"   { $viewSearch.Visibility = "Visible" }
+        "Backup"   { $viewBackup.Visibility = "Visible" }
+    }
+}
+
+# --- POPULATE CONFIG CATEGORIES ---
+if ($configLoaded -and $config.InstallerConfig.WingetApps.Category) {
     foreach ($category in $config.InstallerConfig.WingetApps.Category) {
         $tabItem = New-Object System.Windows.Controls.TabItem
         $tabItem.Header = $category.Name
@@ -435,9 +527,12 @@ if ($config.InstallerConfig.WingetApps.Category) {
     }
 }
 
-# --- UPDATE LIST ON TAB SELECTION ---
+# --- TAB EVENTS ---
 $tabCategories.Add_SelectionChanged({
     if ($tabCategories.SelectedItem -eq $null) { return }
+    # Unselect Fixed Tabs
+    $tabFixedTools.SelectedIndex = -1
+    Switch-View "Category"
 
     $selectedTab = $tabCategories.SelectedItem
     $categoryData = $selectedTab.Tag
@@ -482,91 +577,117 @@ $tabCategories.Add_SelectionChanged({
     })
 })
 
-# --- POPULATE LOCAL APPS (UPDATED WITH ARGUMENTS & WORKING DIR) ---
-if ($config.InstallerConfig.LocalApps.App) {
+$tabFixedTools.Add_SelectionChanged({
+    if ($tabFixedTools.SelectedItem -eq $null) { return }
+    # Unselect Categories
+    $tabCategories.SelectedIndex = -1
+
+    if ($tabFixedTools.SelectedItem -eq $tabSearch) {
+        Switch-View "Search"
+    } elseif ($tabFixedTools.SelectedItem -eq $tabBackup) {
+        Switch-View "Backup"
+    }
+})
+
+# --- LOCAL APPS POPULATION ---
+if ($configLoaded -and $config.InstallerConfig.LocalApps.App) {
     foreach ($localApp in $config.InstallerConfig.LocalApps.App) {
         $btn = New-Object System.Windows.Controls.Button
         $btn.Content = $localApp.Name
-
-        # FIX: Store Path AND Args in a custom object in Tag
-        $btn.Tag = @{
-            Path = $localApp.Path
-            Args = $localApp.Args
-        }
-
+        $btn.Tag = @{ Path = $localApp.Path; Args = $localApp.Args }
         $btn.Style = $window.Resources["FluentButton"]
         $btn.HorizontalContentAlignment = "Left"
         $btn.Margin = "0,0,0,8"
 
         $btn.Add_Click({
-            # Retrieve properties
             $props = $this.Tag
-            $relativePath = $props.Path
-            $args = $props.Args
-
-            $fullPath = Join-Path $script:ScriptDir $relativePath
-
-            # FIX: Determine parent directory for WorkingDirectory
+            $fullPath = Join-Path $script:ScriptDir $props.Path
             $workDir = Split-Path -Parent $fullPath
 
             if (Test-Path $fullPath) {
                 $txtStatusFooter.Text = "Running: $($this.Content)"
-
-                # Check extension
                 if ($fullPath.ToLower().EndsWith(".msi")) {
-                    # For MSI, we use msiexec. If Args are provided, we append them.
                     $msiArgs = "/i `"$fullPath`" /qn"
-                    if ($args) { $msiArgs = "/i `"$fullPath`" $args" }
+                    if ($props.Args) { $msiArgs = "/i `"$fullPath`" $($props.Args)" }
                     Start-Process "msiexec.exe" $msiArgs -WorkingDirectory $workDir
                 }
                 else {
-                    # For EXE/BAT, check if arguments exist
-                    if ($args) {
-                        Start-Process -FilePath $fullPath -ArgumentList $args -WorkingDirectory $workDir
-                    } else {
-                        Start-Process -FilePath $fullPath -WorkingDirectory $workDir
-                    }
+                    if ($props.Args) { Start-Process -FilePath $fullPath -ArgumentList $props.Args -WorkingDirectory $workDir }
+                    else { Start-Process -FilePath $fullPath -WorkingDirectory $workDir }
                 }
-            } else {
-                $txtStatusFooter.Text = "Error: File not found ($fullPath)"
-            }
+            } else { $txtStatusFooter.Text = "Error: File not found ($fullPath)" }
         })
         [void]$pnlLocalApps.Children.Add($btn)
     }
 }
 
-# --- INSTALL BUTTON LOGIC ---
-$btnInstall.Add_Click({
-    $appsToInstall = @()
-    if ($config.InstallerConfig.WingetApps.Category) {
-        foreach ($cat in $config.InstallerConfig.WingetApps.Category) {
-            foreach ($app in $cat.App) {
-                if ($script:selectionState.ContainsKey($app.Id) -and $script:selectionState[$app.Id] -eq $true) {
-                    $appsToInstall += $app
-                }
+# --- SEARCH FEATURE LOGIC ---
+$btnSearch.Add_Click({
+    $query = $txtSearch.Text
+    if ([string]::IsNullOrWhiteSpace($query)) { return }
+
+    $btnSearch.IsEnabled = $false
+    $txtStatusFooter.Text = "Searching repositories... This may take a moment."
+    $lvSearchResults.ItemsSource = $null
+    [System.Windows.Forms.Application]::DoEvents()
+
+    try {
+        # Run winget search
+        # Using specific arguments to get cleaner output if possible, but parsing is key
+        $proc = Start-Process "winget" -ArgumentList "search --accept-source-agreements `"$query`"" -NoNewWindow -Wait -PassThru -RedirectStandardOutput "$env:TEMP\winget_search.tmp"
+
+        $lines = Get-Content "$env:TEMP\winget_search.tmp" -Encoding UTF8
+        $results = @()
+
+        # Simple parsing strategy: Skip header, look for lines with ID
+        # Winget table usually: Name, Id, Version, Match, Source
+        foreach ($line in $lines) {
+            if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
+
+            # Split by 2 or more spaces to separate columns roughly
+            $parts = $line -split "\s{2,}"
+            if ($parts.Count -ge 3) {
+                $obj = New-Object PSObject
+                $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $false
+                $obj | Add-Member -MemberType NoteProperty -Name "Name" -Value $parts[0].Trim()
+                $obj | Add-Member -MemberType NoteProperty -Name "Id" -Value $parts[1].Trim()
+                $obj | Add-Member -MemberType NoteProperty -Name "Version" -Value $parts[2].Trim()
+
+                # Source is usually the last one, sometimes there is a 'Match' column in between
+                if ($parts.Count -ge 4) { $obj | Add-Member -MemberType NoteProperty -Name "Source" -Value $parts[$parts.Count -1].Trim() }
+                else { $obj | Add-Member -MemberType NoteProperty -Name "Source" -Value "Unknown" }
+
+                $results += $obj
             }
         }
+        $lvSearchResults.ItemsSource = $results
+        $txtStatusFooter.Text = "Found $($results.Count) applications."
+    } catch {
+        $txtStatusFooter.Text = "Search failed."
     }
+    $btnSearch.IsEnabled = $true
+})
 
-    if ($appsToInstall.Count -eq 0) {
-        $txtStatusFooter.Text = "Please select applications to install."
+# --- INSTALL LOGIC (SHARED) ---
+function Install-AppList($appList) {
+    if ($appList.Count -eq 0) {
+        $txtStatusFooter.Text = "No applications selected."
         return
     }
 
-    $btnInstall.IsEnabled = $false
-    $pbInstall.Maximum = $appsToInstall.Count
+    $pbInstall.Maximum = $appList.Count
     $pbInstall.Value = 0
     $failedList = @()
     $isRepairDone = $false
 
-    foreach ($app in $appsToInstall) {
+    foreach ($app in $appList) {
         $appName = $app.Name
         $appId = $app.Id
         $txtStatusFooter.Text = "Installing: $appName..."
         [System.Windows.Forms.Application]::DoEvents()
 
         $sourceParam = "--source winget"
-        if ($appId -notmatch "\." -and $appId -match "^[a-zA-Z0-9]+$") {
+        if ($app.Source -match "msstore" -or ($appId -notmatch "\." -and $appId -match "^[a-zA-Z0-9]+$")) {
             $sourceParam = "--source msstore"
         }
 
@@ -579,117 +700,116 @@ $btnInstall.Add_Click({
 
         try {
             $proc = Run-Winget $finalArgs
+
+            # --- ERROR HANDLING & REPAIR LOGIC ---
             $isCertificateError = $proc.ExitCode -eq -1978335138
             $isSourceError = ($proc.ExitCode -eq -2145844844) -or ($proc.ExitCode -eq -1978335212)
 
-            if ($isCertificateError -and -not $isRepairDone) {
-                $txtStatusFooter.Text = "Critical: Winget is outdated. Auto-Updating..."
+            if (($isCertificateError -or $isSourceError) -and -not $isRepairDone) {
+                $txtStatusFooter.Text = "Source Error detected. Attempting repair..."
                 [System.Windows.Forms.Application]::DoEvents()
-                try {
-                    $updateUrl = "https://aka.ms/getwinget"
-                    $tempPath = "$env:TEMP\winget_update.msixbundle"
-                    if (Test-Path $tempPath) { Remove-Item $tempPath -Force }
-                    $oldMax = $pbInstall.Maximum; $oldVal = $pbInstall.Value
-                    $pbInstall.Maximum = 100; $pbInstall.Value = 0
-                    $job = Start-BitsTransfer -Source $updateUrl -Destination $tempPath -Asynchronous -DisplayName "WingetUpdateJob"
-                    while ($job.JobState -eq 'Transferring' -or $job.JobState -eq 'Connecting') {
-                        $job = Get-BitsTransfer -JobId $job.JobId
-                        if ($job.TotalBytes -gt 0) {
-                            $percent = [math]::Round(($job.BytesTransferred / $job.TotalBytes) * 100)
-                            $pbInstall.Value = $percent
-                            $totalMB = [math]::Round($job.TotalBytes / 1MB, 2)
-                            $currentMB = [math]::Round($job.BytesTransferred / 1MB, 2)
-                            $txtStatusFooter.Text = "Downloading Winget Update... %$percent ($currentMB MB / $totalMB MB)"
-                        } else { $txtStatusFooter.Text = "Connecting to Microsoft Servers..." }
-                        [System.Windows.Forms.Application]::DoEvents()
-                        Start-Sleep -Milliseconds 200
-                    }
-                    Complete-BitsTransfer -BitsJob $job
-                    $pbInstall.Maximum = $oldMax; $pbInstall.Value = $oldVal
-                    $txtStatusFooter.Text = "Installing latest Winget..."
-                    [System.Windows.Forms.Application]::DoEvents()
-                    Add-AppxPackage -Path $tempPath -ForceApplicationShutdown
-                    Start-Sleep -Seconds 5
-                } catch {
-                    $err = $_.Exception.Message
-                    $txtStatusFooter.Text = "Auto-Update failed: $err. Trying reset..."
-                    if ($oldMax) { $pbInstall.Maximum = $oldMax }; if ($oldVal) { $pbInstall.Value = $oldVal }
-                }
                 Run-Winget "source reset --force"
                 Run-Winget "source update"
                 $isRepairDone = $true
-                $txtStatusFooter.Text = "Retrying $appName (After Update)..."
+                $txtStatusFooter.Text = "Retrying $appName..."
                 [System.Windows.Forms.Application]::DoEvents()
                 $proc = Run-Winget $finalArgs
             }
-            elseif ($isSourceError -and -not $isRepairDone) {
-                $txtStatusFooter.Text = "Source Error. Resetting Sources..."
-                [System.Windows.Forms.Application]::DoEvents()
-                try { Set-Service -Name wuauserv -StartupType Manual -ErrorAction SilentlyContinue; Start-Service -Name wuauserv -ErrorAction SilentlyContinue } catch {}
-                Run-Winget "source remove msstore"
-                Run-Winget "source reset --force"
-                $txtStatusFooter.Text = "Updating Sources..."
-                [System.Windows.Forms.Application]::DoEvents()
-                Run-Winget "source update"
-                Start-Sleep -Seconds 3
-                $isRepairDone = $true
-                $txtStatusFooter.Text = "Retrying $appName (After Repair)..."
-                [System.Windows.Forms.Application]::DoEvents()
-                $proc = Run-Winget $finalArgs
-            }
+
             if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne -1978335189) {
-                 $txtStatusFooter.Text = "Retrying $appName (Auto-Source Strategy)..."
-                 [System.Windows.Forms.Application]::DoEvents()
-                 $proc = Run-Winget $baseArgs
-            }
-            $validExitCodes = @(0, -1978335189)
-            if ($validExitCodes -notcontains $proc.ExitCode) {
-                $errorCode = $proc.ExitCode
-                $errorMsg = ""
-                switch ($errorCode) {
-                    -1978335212 { $errorMsg = "Package Not Found (Invalid ID or Removed)" }
-                    -1978335138 { $errorMsg = "Server Certificate Error (Source Repair Failed)" }
-                    -2145844844 { $errorMsg = "Download Server Error (404 Not Found)" }
-                    -2147023838 { $errorMsg = "Windows Update Service Disabled (Please Enable)" }
-                    -1978335215 { $errorMsg = "Download Failed (Check Internet Connection)" }
-                    -1978335217 { $errorMsg = "Hash Mismatch (Security Warning)" }
-                    -1978334913 { $errorMsg = "Another Installation is in Progress" }
-                    -2147467260 { $errorMsg = "Admin Privileges Required (Operation Cancelled)" }
-                    default { $hexCode = "0x{0:X}" -f $errorCode; $errorMsg = "Unknown Error ($hexCode)" }
-                }
-                $failedList += "$appName -> $errorMsg"
-                $txtStatusFooter.Text = "Error: $appName"
+                $failedList += "$appName (Code: $($proc.ExitCode))"
             }
         } catch {
-             $errMsg = $_.Exception.Message
-             $failedList += "$appName -> Script Error: $errMsg"
-             $txtStatusFooter.Text = "Script Error: $appName"
+             $failedList += "$appName (Script Error)"
         }
         $pbInstall.Value += 1
     }
 
     if ($failedList.Count -gt 0) {
-        $txtStatusFooter.Text = "Operation completed with errors."
-        $msg = "The following applications failed to install:`n`n"
-        foreach ($item in $failedList) { $msg += "- $item`n" }
-        $msg += "`nPlease check your internet connection or IDs in Config file."
-        [System.Windows.Forms.MessageBox]::Show($msg, "Installation Completed (With Errors)", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        $txtStatusFooter.Text = "Completed with errors."
+        [System.Windows.Forms.MessageBox]::Show("Failed:`n" + ($failedList -join "`n"), "Warning", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
     } else {
         $txtStatusFooter.Text = "All operations completed successfully."
-        [System.Windows.Forms.MessageBox]::Show("All selected applications installed successfully!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        [System.Windows.Forms.MessageBox]::Show("Installation Successful!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
     }
+}
+
+# --- INSTALL BUTTONS ---
+$btnInstall.Add_Click({
+    if (-not $configLoaded) { return }
+    $appsToInstall = @()
+    if ($config.InstallerConfig.WingetApps.Category) {
+        foreach ($cat in $config.InstallerConfig.WingetApps.Category) {
+            foreach ($app in $cat.App) {
+                if ($script:selectionState.ContainsKey($app.Id) -and $script:selectionState[$app.Id] -eq $true) {
+                    $appsToInstall += $app
+                }
+            }
+        }
+    }
+    $btnInstall.IsEnabled = $false
+    Install-AppList $appsToInstall
     $btnInstall.IsEnabled = $true
+})
+
+$btnInstallSearch.Add_Click({
+    if ($lvSearchResults.ItemsSource -eq $null) { return }
+    $selected = @()
+    foreach ($item in $lvSearchResults.ItemsSource) {
+        if ($item.IsSelected) { $selected += $item }
+    }
+    $btnInstallSearch.IsEnabled = $false
+    Install-AppList $selected
+    $btnInstallSearch.IsEnabled = $true
+})
+
+# --- BACKUP & RESTORE LOGIC ---
+$btnBackup.Add_Click({
+    $sfd = New-Object System.Windows.Forms.SaveFileDialog
+    $sfd.Filter = "JSON Files (*.json)|*.json"
+    $sfd.FileName = "winget-backup-$(Get-Date -Format 'yyyyMMdd').json"
+
+    if ($sfd.ShowDialog() -eq "OK") {
+        $txtBackupStatus.Text = "Exporting list... Please wait."
+        [System.Windows.Forms.Application]::DoEvents()
+        try {
+            Start-Process "winget" -ArgumentList "export -o `"$($sfd.FileName)`" --include-versions" -NoNewWindow -Wait
+            $txtBackupStatus.Text = "Export saved to: $($sfd.FileName)"
+            [System.Windows.Forms.MessageBox]::Show("Backup completed successfully!", "Backup", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        } catch {
+            $txtBackupStatus.Text = "Export failed."
+        }
+    }
+})
+
+$btnRestore.Add_Click({
+    $ofd = New-Object System.Windows.Forms.OpenFileDialog
+    $ofd.Filter = "JSON Files (*.json)|*.json"
+
+    if ($ofd.ShowDialog() -eq "OK") {
+        $txtBackupStatus.Text = "Restoring from file... Check console if needed."
+        [System.Windows.Forms.Application]::DoEvents()
+        try {
+            Start-Process "winget" -ArgumentList "import -i `"$($ofd.FileName)`" --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait
+            $txtBackupStatus.Text = "Restore completed."
+            [System.Windows.Forms.MessageBox]::Show("Packages have been processed. Some might require manual intervention if unavailable.", "Restore", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        } catch {
+            $txtBackupStatus.Text = "Restore failed."
+        }
+    }
 })
 
 # --- THEME BUTTON ---
 $btnThemeToggle.Add_Click({ $script:isDark = -not $script:isDark; Set-Theme $script:isDark })
 
-# --- AUTHOR LINK CLICK EVENT ---
+# --- AUTHOR LINK ---
 $txtAuthorLink.Add_MouseLeftButtonDown({ try { Start-Process "https://www.osmanonurkoc.com" } catch {} })
 
 # On Load
 $window.Add_Loaded({
     if ($tabCategories.Items.Count -gt 0) { $tabCategories.SelectedIndex = 0 }
+    else { $tabFixedTools.SelectedIndex = 0 } # Fallback if no config
+
     try { $hwnd = [System.Windows.Interop.WindowInteropHelper]::new($window).Handle; [Win32]::SetDarkMode($hwnd, $true) } catch {}
     Set-Theme $true
 })
