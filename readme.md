@@ -17,6 +17,8 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
 
 <p align="center">
   <img src="images/screenshot1.png" width="85%" />
+  <img src="images/screenshot2.png" width="85%" />
+  <img src="images/screenshot3.png" width="85%" />
 </p>
 
 ---
