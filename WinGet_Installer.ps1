@@ -6,9 +6,9 @@
         Features:
         - Search & Install from Winget/MSStore repositories.
         - Backup & Restore installed packages (JSON).
+        - Smart Restore: Skips already installed packages to save time.
         - Dark/Light mode support with system integration.
         - Async operations to prevent UI freezing.
-        - Live Progress Bar for Restore operations.
 
     .NOTES
         Author:  Osman Onur Koç
@@ -67,11 +67,12 @@ $script:RepoCache = @()
 $script:isRepoFetched = $false
 $script:activeProcess = $null
 $script:activeOperation = ""
-$script:RestoreQueue = @() # Queue for restoring apps one by one
+$script:RestoreQueue = @()
+$script:CurrentRestoreItem = $null
 
 # --- TIMER (ASYNC HANDLER) ---
 $timer = New-Object System.Windows.Threading.DispatcherTimer
-$timer.Interval = [TimeSpan]::FromMilliseconds(200)
+$timer.Interval = [TimeSpan]::FromMilliseconds(100)
 
 # --- XAML UI ---
 [xml]$xaml = @"
@@ -272,14 +273,20 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(200)
             <Setter Property="Background" Value="{DynamicResource BgInput}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
-            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Padding" Value="10,0"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
-                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -496,6 +503,7 @@ function Set-Theme {
 $timer.Add_Tick({
     if ($script:activeProcess -ne $null) {
         if ($script:activeProcess.HasExited) {
+            $exitCode = $script:activeProcess.ExitCode
             $script:activeProcess = $null # Reset immediately
 
             # --- FETCH ---
@@ -547,27 +555,24 @@ $timer.Add_Tick({
                     $txtStatusFooter.Text = "Online Search: $($newResults.Count) results."
                 }
             }
-            # --- RESTORE LOOP ---
-            elseif ($script:activeOperation -eq "RestoreLoop") {
-                # Process finished, update progress
-                $pbInstall.Value += 1
-
-                if ($script:RestoreQueue.Count -gt 0) {
-                    # Dequeue next
-                    $nextApp = $script:RestoreQueue[0]
-                    $script:RestoreQueue = $script:RestoreQueue[1..($script:RestoreQueue.Count - 1)]
-
-                    # Start next process
-                    $txtStatusFooter.Text = "Restoring: $($nextApp.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
-                    $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($nextApp.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -PassThru
+            # --- RESTORE CHECK PHASE ---
+            elseif ($script:activeOperation -eq "RestoreCheck") {
+                if ($exitCode -eq 0) {
+                    $txtStatusFooter.Text = "Skipping (Already Installed): $($script:CurrentRestoreItem.PackageIdentifier) ($($pbInstall.Value)/$($pbInstall.Maximum))"
+                    Process-Next-Restore-Item
                 } else {
-                    # Done
-                    $timer.Stop()
-                    $pbInstall.IsIndeterminate = $false
-                    $txtStatusFooter.Text = "Restore completed."
-                    $txtBackupStatus.Text = "Restore completed."
-                    [System.Windows.Forms.MessageBox]::Show("Restore Completed Successfully!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+                    $script:activeOperation = "RestoreInstall"
+                    $txtStatusFooter.Text = "Installing: $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
+
+                    $srcArg = ""
+                    if ($script:CurrentRestoreItem.Source -eq "msstore") { $srcArg = "--source msstore" }
+
+                    $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($script:CurrentRestoreItem.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
                 }
+            }
+            # --- RESTORE INSTALL PHASE ---
+            elseif ($script:activeOperation -eq "RestoreInstall") {
+                Process-Next-Restore-Item
             }
             # --- BACKUP ---
             elseif ($script:activeOperation -eq "Backup") {
@@ -579,6 +584,32 @@ $timer.Add_Tick({
         }
     }
 })
+
+function Process-Next-Restore-Item {
+    $pbInstall.Value += 1
+    if ($script:RestoreQueue.Count -gt 0) {
+        $script:CurrentRestoreItem = $script:RestoreQueue[0]
+        # SAFE QUEUE REDUCTION
+        $script:RestoreQueue = @($script:RestoreQueue | Select-Object -Skip 1)
+
+        # MSStore Optimization: Skip 'list' check
+        if ($script:CurrentRestoreItem.Source -eq "msstore") {
+             $script:activeOperation = "RestoreInstall"
+             $txtStatusFooter.Text = "Installing (Store App): $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
+             $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($script:CurrentRestoreItem.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements --source msstore" -NoNewWindow -PassThru
+        } else {
+             $script:activeOperation = "RestoreCheck"
+             $txtStatusFooter.Text = "Checking: $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
+             $script:activeProcess = Start-Process "winget" -ArgumentList "list -e --id $($script:CurrentRestoreItem.PackageIdentifier)" -NoNewWindow -PassThru
+        }
+    } else {
+        $timer.Stop()
+        $pbInstall.IsIndeterminate = $false
+        $txtStatusFooter.Text = "Restore completed."
+        $txtBackupStatus.Text = "Restore completed."
+        [System.Windows.Forms.MessageBox]::Show("Restore Completed Successfully!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+    }
+}
 
 function Start-AsyncProcess {
     param($argsList, $opName, $outputFile)
@@ -714,7 +745,7 @@ $btnBackup.Add_Click({
     $sfd = New-Object System.Windows.Forms.SaveFileDialog; $sfd.Filter = "JSON|*.json"; $sfd.FileName = "backup.json"
     if ($sfd.ShowDialog() -eq "OK") {
         $txtBackupStatus.Text = "Exporting (Async)..."
-        Start-AsyncProcess "export -o `"$($sfd.FileName)`" --include-versions" "Backup" $null
+        Start-AsyncProcess "export -o `"$($sfd.FileName)`"" "Backup" $null
     }
 })
 
@@ -722,21 +753,34 @@ $btnRestore.Add_Click({
     $ofd = New-Object System.Windows.Forms.OpenFileDialog; $ofd.Filter = "JSON|*.json"
     if ($ofd.ShowDialog() -eq "OK") {
         $txtBackupStatus.Text = "Reading Backup File..."
-
         try {
             $jsonContent = Get-Content $ofd.FileName | ConvertFrom-Json
-            if ($jsonContent.Sources.Packages) {
-                # Load Queue
-                $script:RestoreQueue = @($jsonContent.Sources.Packages)
+            if ($jsonContent.Sources) {
+                # FLATTEN PACKAGES AND INJECT SOURCE
+                $flatList = @()
+                foreach ($source in $jsonContent.Sources) {
+                    $sName = "winget"
+                    if ($source.SourceDetails.Name) { $sName = $source.SourceDetails.Name }
+
+                    if ($source.Packages) {
+                        foreach ($pkg in $source.Packages) {
+                            $obj = $pkg | Select-Object *
+                            $obj | Add-Member -MemberType NoteProperty -Name "Source" -Value $sName -Force
+                            $flatList += $obj
+                        }
+                    }
+                }
+
+                # LOAD QUEUE
+                $script:RestoreQueue = $flatList
                 $pbInstall.IsIndeterminate = $false
                 $pbInstall.Maximum = $script:RestoreQueue.Count
                 $pbInstall.Value = 0
 
-                # Start Loop (Trigger Timer with first item)
-                $script:activeOperation = "RestoreLoop"
+                # START LOOP
                 $timer.Start()
-                # Kickstart loop by setting a dummy "exited" process so Tick catches it
-                $script:activeProcess = [PSCustomObject]@{ HasExited = $true }
+                $script:activeProcess = [PSCustomObject]@{ HasExited = $true; ExitCode = 0 } # Dummy kickstart
+                Process-Next-Restore-Item
             }
         } catch {
             [System.Windows.Forms.MessageBox]::Show("Invalid JSON File!", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
