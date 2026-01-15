@@ -6,6 +6,8 @@
   <WingetApps>
     <Category Name="Utilities">
       <App Name="AnyDesk" Id="AnyDesk.AnyDesk" />
+      <App Name="AnyBurn" Id="PowerSoftware.AnyBurn" />
+      <App Name="BitWarden" Id="BitWarden.BitWarden" />
       <App Name="Chrome Remote Desktop Host" Id="Google.ChromeRemoteDesktopHost" />
       <App Name="7-Zip" Id="7zip.7zip" />
       <App Name="BleachBit" Id="BleachBit.BleachBit" />
@@ -39,13 +41,16 @@
       <App Name="Git" Id="Git.Git" />
       <App Name="GitHub CLI" Id="GitHub.cli" />
       <App Name="GitHub Desktop" Id="GitHub.GitHubDesktop" />
+      <App Name="Fork (Git Client)" Id="Fork.Fork" />
       <App Name="Java 8 RE" Id="Oracle.JavaRuntimeEnvironment" />
       <App Name="Java SE" Id="Oracle.JDK.25" /> <App Name="Node JS" Id="OpenJS.NodeJS" />
       <App Name="JetBrains Toolbox" Id="JetBrains.Toolbox" />
+      <App Name="JetBrains Rider" Id="JetBrains.Rider" />
       <App Name="Python Launcher" Id="Python.Launcher" />
       <App Name="APK Editor Studio" Id="AlexanderGorishnyak.APKEditorStudio" />
       <App Name="Inno Setup" Id="JRSoftware.InnoSetup" />
       <App Name="Unity" Id="Unity.Unity.2022" />
+      <App Name="Unity Hub" Id="Unity.UnityHub" />
       <App Name="Godot Engine" Id="GodotEngine.GodotEngine" />
       <App Name="Resource Hacker" Id="AngusJohnson.ResourceHacker" />
       <App Name="Postman" Id="Postman.Postman" />
@@ -103,19 +108,23 @@
     <Category Name="Internet">
       <App Name="Google Chrome" Id="Google.Chrome" />
       <App Name="Opera" Id="Opera.Opera" />
+      <App Name="Opera GX" Id="Opera.OperaGX" />
       <App Name="Firefox" Id="Mozilla.Firefox" />
       <App Name="Tor Browser" Id="TorProject.TorBrowser" />
       <App Name="Vivaldi" Id="Vivaldi.Vivaldi" />
       <App Name="Google Drive" Id="Google.GoogleDrive" />
-      <App Name="Xtreme Download Manager" Id="subhra74.XtremeDownloadManager.Beta" />
-      <App Name="qBittorrent" Id="c0re100.qBittorrent-Enhanced-Edition" />
       <App Name="Megasync" Id="Mega.MEGASync" />
+      <App Name="Microsoft OneDrive" Id="Microsoft.OneDrive" />
+      <App Name="Xtreme Download Manager" Id="subhra74.XtremeDownloadManager.Beta" />
+      <App Name="qBittorrent" Id="qBittorrent.qBittorrent" />
+      <App Name="qBittorrent Enhanced" Id="c0re100.qBittorrent-Enhanced-Edition" />
       <App Name="Brave Browser" Id="Brave.Brave" />
       <App Name="Thunderbird" Id="Mozilla.Thunderbird" />
     </Category>
 
     <Category Name="Communication">
       <App Name="Discord" Id="Discord.Discord" />
+      <App Name="Discord PTB" Id="Discord.Discord.PTB" />
       <App Name="Element" Id="Element.Element" />
       <App Name="Ferdium" Id="Ferdium.Ferdium" />
       <App Name="Signal" Id="OpenWhisperSystems.Signal" />
@@ -187,6 +196,15 @@
       <App Name="Microsoft .NET SDK 10" Id="Microsoft.DotNet.SDK.10" />
       <App Name="Microsoft .NET SDK Preview" Id="Microsoft.DotNet.SDK.Preview" />
       <App Name="OpenJDK 17 (LTS)" Id="Microsoft.OpenJDK.17" />
+    </Category>
+
+    <Category Name="3D Print">
+      <App Name="Ultimaker Cura" Id="Ultimaker.Cura" />
+      <App Name="PrusaSlicer" Id="Prusa3D.PrusaSlicer" />
+      <App Name="AnkerMake Studio" Id="Anker.AnkerMake" />
+      <App Name="Creality Print" Id="Creality.CrealityPrint" />
+      <App Name="Bambu Studio" Id="Bambulab.Bambustudio" />
+      <App Name="OrcaSlicer" Id="SoftFever.OrcaSlicer" />
     </Category>
 
     <Category Name="Miscellaneous">

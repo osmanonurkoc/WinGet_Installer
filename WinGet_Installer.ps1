@@ -79,7 +79,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Software Installer @osmanonurkoc" Height="850" Width="1200"
+    Title="Software Installer @osmanonurkoc" Height="880" Width="1200"
     WindowStartupLocation="CenterScreen"
     Background="{DynamicResource BgBase}">
 
