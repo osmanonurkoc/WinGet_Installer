@@ -1,12 +1,13 @@
 
 # Software Installer via WinGet and Local
 
+
 ![License](https://img.shields.io/github/license/osmanonurkoc/WinGet_Installer)
 ![Release](https://img.shields.io/github/v/release/osmanonurkoc/WinGet_Installer)
 ![Downloads](https://img.shields.io/github/downloads/osmanonurkoc/WinGet_Installer/total)
 ![Language](https://img.shields.io/badge/language-PowerShell-blue)
 
-A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Winget). This tool allows you to bulk install applications defined in a simple XML configuration file, acting as a post-installation setup utility for Windows.
+A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Winget). This tool allows you to bulk install applications, search online repositories, and perform full system software backups/restorations.
 
 ---
 ### 📥 Download Latest
@@ -16,21 +17,26 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="images/screenshot1.png" width="85%" />
-  <img src="images/screenshot2.png" width="85%" />
-  <img src="images/screenshot3.png" width="85%" />
+  <img src="images/screenshot1.png" width="85%" alt="Category View" />
+  <br/>
+  <img src="images/screenshot2.png" width="85%" alt="Backup and Restore" />
+  <br/>
+  <img src="images/screenshot3.png" width="85%" alt="Search Repository" />
 </p>
 
 ---
 
 ## 🔥 Features
 
-* **Bulk Installation:** Install dozens of apps with a single click.
-* **Smart Source Repair:** Automatically detects and fixes Winget 404 errors, Source Certification errors (0x8a15005e), and outdated Winget versions.
+* **Bulk Installation:** Install dozens of apps defined in `config.xml` with a single click.
+* **Repository Search (New):** * **Live Filter:** Instantly filter through the cached Winget repository as you type.
+    * **Online Search:** Press `ENTER` to perform a deep search across Winget and MSStore sources to find any application.
+* **Backup & Restore (New):** * **Export:** Create a snapshot of your installed software (JSON format).
+    * **Restore:** Restore your software suite on a fresh Windows installation using the backup file.
+* **Smart Source Repair:** Automatically detects and fixes Winget 404 errors and Source Certification errors (0x8a15005e).
 * **Modern UI:** A clean WPF interface with a built-in Dark/Light theme toggle.
-* **Portable Configuration:** Apps are defined in `config.xml`, making it easy to share setups.
 * **Local App Support:** Can trigger local `.exe` or `.msi` installers from a `Programs` folder.
-* **Silent Operation:** Hides the ugly PowerShell console window automatically.
+* **Silent Operation:** Hides the background PowerShell console window automatically.
 
 ## 🚀 How to Run
 
