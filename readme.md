@@ -1,5 +1,5 @@
 
-# Software Installer via WinGet and Local
+# Software Installer via WinGet, MS Store and Local
 
 
 ![License](https://img.shields.io/github/license/osmanonurkoc/WinGet_Installer)
