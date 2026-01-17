@@ -6,9 +6,13 @@
         Features:
         - Search & Install from Winget/MSStore repositories.
         - Backup & Restore installed packages (JSON).
-        - Smart Restore: Skips already installed packages to save time.
-        - Dark/Light mode support with system integration.
-        - Async operations to prevent UI freezing.
+        - Unified view for Upgrades and Pinned applications with visual separator.
+        - Context menu integration for Pin/Unpin operations.
+        - Silent background processing for pinning operations.
+        - Smart Restore capability to skip existing installations.
+        - Automatic System Theme Detection (Dark/Light mode).
+        - Asynchronous operations to ensure responsive UI.
+        - Advanced parsing logic for handling complex package names.
 
     .NOTES
         Author:  Osman Onur Koç
@@ -69,6 +73,7 @@ $script:activeProcess = $null
 $script:activeOperation = ""
 $script:RestoreQueue = @()
 $script:CurrentRestoreItem = $null
+$script:PinnedApps = @()
 
 # --- TIMER (ASYNC HANDLER) ---
 $timer = New-Object System.Windows.Threading.DispatcherTimer
@@ -79,7 +84,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Software Installer @osmanonurkoc" Height="880" Width="1200"
+    Title="Software Installer @osmanonurkoc" Height="920" Width="1250"
     WindowStartupLocation="CenterScreen"
     Background="{DynamicResource BgBase}">
 
@@ -147,7 +152,44 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
             </Setter>
         </Style>
 
+        <ContextMenu x:Key="RowMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+             <MenuItem Header="Pin App (Skip Update)" Name="cmPin" CommandParameter="{Binding}">
+                <MenuItem.Icon>
+                    <TextBlock Text="📌" />
+                </MenuItem.Icon>
+                <MenuItem.Style>
+                    <Style TargetType="MenuItem">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Status}" Value="Pinned">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Status}" Value="Separator">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.Style>
+             </MenuItem>
+
+             <MenuItem Header="Unpin App" Name="cmUnpin" CommandParameter="{Binding}">
+                <MenuItem.Icon>
+                    <TextBlock Text="🔓" />
+                </MenuItem.Icon>
+                <MenuItem.Style>
+                    <Style TargetType="MenuItem">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Status}" Value="Pinned">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.Style>
+             </MenuItem>
+        </ContextMenu>
+
         <Style TargetType="ListViewItem">
+            <Setter Property="ContextMenu" Value="{StaticResource RowMenu}"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="Template">
@@ -169,6 +211,22 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Separator">
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="IsHitTestVisible" Value="False"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Grid Margin="0,15,0,15">
+                                    <Border Background="#60FFFFFF" Height="1" SnapsToDevicePixels="True" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="CheckBox">
@@ -328,6 +386,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                     <Border Height="1" Background="{DynamicResource BorderColor}" Margin="10,15,10,15"/>
                     <TabControl Name="tabFixedTools" BorderThickness="0" Background="Transparent" TabStripPlacement="Left">
                         <TabItem Name="tabSearch" Header="Search Repo"/>
+                        <TabItem Name="tabUpdates" Header="Updates &amp; Pins"/>
                         <TabItem Name="tabBackup" Header="Backup &amp; Restore"/>
                     </TabControl>
                 </StackPanel>
@@ -421,6 +480,57 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                         </Button>
                     </Grid>
 
+                    <Grid Name="viewUpdates" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/> <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                             <TextBlock Text="Updates &amp; Pins" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                 <TextBlock Text="Right-click on an item to Pin/Unpin." FontSize="14" Foreground="{DynamicResource TextSecondary}"/>
+                             </StackPanel>
+                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                <Button Name="btnCheckUpdates" Content="Check for Updates" Style="{StaticResource FluentButton}" Width="160"/>
+                                <Button Name="btnUpgradeAll" Content="Upgrade All Available" Margin="10,0,0,0" Style="{StaticResource FluentButton}" Width="180"/>
+                             </StackPanel>
+                        </StackPanel>
+
+                        <ListView Name="lvUpdates" Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextPrimary}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Select" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Name" Width="300">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" Foreground="{Binding ColorBrush}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="ID" Width="250" DisplayMemberBinding="{Binding Id}"/>
+                                    <GridViewColumn Header="Current" Width="100" DisplayMemberBinding="{Binding CurrentVer}"/>
+                                    <GridViewColumn Header="Available" Width="100" DisplayMemberBinding="{Binding NewVer}"/>
+                                    <GridViewColumn Header="Status" Width="100" DisplayMemberBinding="{Binding Status}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <Button Name="btnInstallUpgrade" Grid.Row="2" Content="UPGRADE SELECTED"
+                            FontWeight="Bold" Background="{DynamicResource Accent}"
+                            Foreground="{DynamicResource ButtonTextForeground}"
+                            FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0">
+                             <Button.Resources>
+                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+
                     <Grid Name="viewBackup" Visibility="Collapsed">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                              <ContentControl Content="{StaticResource IconBackup}" Width="80" Height="80" Margin="0,0,0,20"/>
@@ -452,9 +562,11 @@ try { $window = [Windows.Markup.XamlReader]::Load($reader) } catch { Write-Host 
 $tabCategories = $window.FindName("tabCategories")
 $tabFixedTools = $window.FindName("tabFixedTools")
 $tabSearch = $window.FindName("tabSearch")
+$tabUpdates = $window.FindName("tabUpdates")
 $tabBackup = $window.FindName("tabBackup")
 $viewCategory = $window.FindName("viewCategory")
 $viewSearch = $window.FindName("viewSearch")
+$viewUpdates = $window.FindName("viewUpdates")
 $viewBackup = $window.FindName("viewBackup")
 $pnlLocalApps = $window.FindName("pnlLocalApps")
 $btnInstall = $window.FindName("btnInstall")
@@ -472,6 +584,14 @@ $pbInstall = $window.FindName("pbInstall")
 $btnThemeToggle = $window.FindName("btnThemeToggle")
 $iconThemeHolder = $window.FindName("iconThemeHolder")
 $txtAuthorLink = $window.FindName("txtAuthorLink")
+
+# Update Controls (New)
+$btnCheckUpdates = $window.FindName("btnCheckUpdates")
+$btnUpgradeAll = $window.FindName("btnUpgradeAll")
+$lvUpdates = $window.FindName("lvUpdates")
+$btnInstallUpgrade = $window.FindName("btnInstallUpgrade")
+$cmPin = $window.FindName("cmPin")
+$cmUnpin = $window.FindName("cmUnpin")
 
 # --- THEME LOGIC ---
 $isDark = $true
@@ -554,6 +674,116 @@ $timer.Add_Tick({
                     $lvSearchResults.ItemsSource = $newResults
                     $txtStatusFooter.Text = "Online Search: $($newResults.Count) results."
                 }
+            }
+            # --- CHECK UPDATES ---
+            elseif ($script:activeOperation -eq "CheckUpdates") {
+                $timer.Stop()
+                $pbInstall.IsIndeterminate = $false
+                $btnCheckUpdates.IsEnabled = $true
+                $tempUpgradeFile = "$env:TEMP\winget_upgrades.tmp"
+                $tempPinFile = "$env:TEMP\winget_pins.tmp"
+
+                # 1. PARSE PINS (RIGHT-TO-LEFT PARSING FIX)
+                $pinnedMap = @{}
+                if (Test-Path $tempPinFile) {
+                     $pLines = Get-Content $tempPinFile -Encoding UTF8
+                     foreach ($line in $pLines) {
+                        if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
+
+                        # Fix: Split by ANY whitespace, handle potentially merged columns
+                        $parts = $line -split "\s+"
+
+                        # Require at least Name, ID, Version (3 parts)
+                        if ($parts.Count -ge 4) {
+                             # Parse from Right to Left
+                             $pinType = $parts[-1]
+                             $source  = $parts[-2]
+                             $version = $parts[-3]
+                             $id      = $parts[-4]
+
+                             # Reconstruct Name (Everything before ID)
+                             $nameParts = $parts[0..($parts.Count - 5)]
+                             $name = $nameParts -join " "
+
+                             # Safety check
+                             if ([string]::IsNullOrWhiteSpace($id)) { continue }
+
+                             $pObj = New-Object PSObject
+                             $pObj | Add-Member -MemberType NoteProperty -Name "Name" -Value $name
+                             $pObj | Add-Member -MemberType NoteProperty -Name "Id" -Value $id
+                             $pObj | Add-Member -MemberType NoteProperty -Name "CurrentVer" -Value $version
+                             $pObj | Add-Member -MemberType NoteProperty -Name "NewVer" -Value "-"
+                             $pObj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Pinned"
+                             $pObj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["Accent"]
+                             $pObj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $false
+
+                             $pinnedMap[$id] = $pObj
+                         }
+                     }
+                }
+
+                $upgrades = @()
+                $pinnedUpgrades = @()
+
+                # 2. PARSE UPGRADES
+                if (Test-Path $tempUpgradeFile) {
+                    $lines = Get-Content $tempUpgradeFile -Encoding UTF8
+                    foreach ($line in $lines) {
+                        if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
+
+                        $parts = $line -split "\s{2,}"
+                        if ($parts.Count -ge 4) {
+                            $id = $parts[1].Trim()
+
+                            $obj = New-Object PSObject
+                            $obj | Add-Member -MemberType NoteProperty -Name "Name" -Value $parts[0].Trim()
+                            $obj | Add-Member -MemberType NoteProperty -Name "Id" -Value $id
+                            $obj | Add-Member -MemberType NoteProperty -Name "CurrentVer" -Value $parts[2].Trim()
+                            $obj | Add-Member -MemberType NoteProperty -Name "NewVer" -Value $parts[3].Trim()
+
+                            if ($pinnedMap.ContainsKey($id)) {
+                                # Pinned but has update
+                                $obj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Pinned"
+                                $obj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["Accent"]
+                                $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $false
+                                $pinnedUpgrades += $obj
+                                $pinnedMap.Remove($id)
+                            } else {
+                                # Normal upgrade
+                                $obj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Ready"
+                                $obj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["TextPrimary"]
+                                $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $true
+                                $upgrades += $obj
+                            }
+                        }
+                    }
+                }
+
+                # 3. ADD REMAINING PINS
+                $remainingPins = $pinnedMap.Values | ForEach-Object { $_ }
+
+                # 4. BUILD LIST WITH VISUAL SEPARATOR
+                $finalList = @()
+                if ($upgrades.Count -gt 0) { $finalList += $upgrades }
+
+                $totalPins = $pinnedUpgrades.Count + $remainingPins.Count
+                if ($upgrades.Count -gt 0 -and $totalPins -gt 0) {
+                    $sep = New-Object PSObject
+                    $sep | Add-Member NoteProperty Name ""
+                    $sep | Add-Member NoteProperty Id ""
+                    $sep | Add-Member NoteProperty CurrentVer ""
+                    $sep | Add-Member NoteProperty NewVer ""
+                    $sep | Add-Member NoteProperty Status "Separator"
+                    $sep | Add-Member NoteProperty ColorBrush "Transparent"
+                    $sep | Add-Member NoteProperty IsSelected $false
+                    $finalList += $sep
+                }
+
+                $finalList += $pinnedUpgrades
+                $finalList += $remainingPins
+
+                $lvUpdates.ItemsSource = $finalList
+                $txtStatusFooter.Text = "Found $($upgrades.Count) updates. Pinned: $totalPins."
             }
             # --- RESTORE CHECK PHASE ---
             elseif ($script:activeOperation -eq "RestoreCheck") {
@@ -652,12 +882,22 @@ function Fetch-Repo {
     Start-AsyncProcess "search `"`" --accept-source-agreements" "Fetch" "$env:TEMP\winget_all_cache.tmp"
 }
 
+function Check-Upgrades {
+    if ($script:activeProcess) { return }
+    $btnCheckUpdates.IsEnabled = $false
+    $txtStatusFooter.Text = "Checking for Pins and Updates..."
+
+    $p = Start-Process "winget" -ArgumentList "pin list" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "$env:TEMP\winget_pins.tmp"
+    Start-AsyncProcess "upgrade --include-unknown --include-pinned" "CheckUpdates" "$env:TEMP\winget_upgrades.tmp"
+}
+
 # --- VIEW SWITCHING ---
 function Switch-View($viewName) {
-    $viewCategory.Visibility = "Collapsed"; $viewSearch.Visibility = "Collapsed"; $viewBackup.Visibility = "Collapsed"
+    $viewCategory.Visibility = "Collapsed"; $viewSearch.Visibility = "Collapsed"; $viewUpdates.Visibility = "Collapsed"; $viewBackup.Visibility = "Collapsed"
     switch ($viewName) {
         "Category" { $viewCategory.Visibility = "Visible" }
         "Search"   { $viewSearch.Visibility = "Visible" }
+        "Updates"  { $viewUpdates.Visibility = "Visible" }
         "Backup"   { $viewBackup.Visibility = "Visible" }
     }
 }
@@ -691,6 +931,7 @@ $tabFixedTools.Add_SelectionChanged({
     if ($tabFixedTools.SelectedItem -eq $null) { return }
     $tabCategories.SelectedIndex = -1
     if ($tabFixedTools.SelectedItem -eq $tabSearch) { Switch-View "Search"; if (-not $script:isRepoFetched) { Fetch-Repo } }
+    elseif ($tabFixedTools.SelectedItem -eq $tabUpdates) { Switch-View "Updates"; Check-Upgrades }
     elseif ($tabFixedTools.SelectedItem -eq $tabBackup) { Switch-View "Backup" }
 })
 
@@ -729,13 +970,66 @@ $btnInstallSearch.Add_Click({
     }
 })
 
+# UPDATES Handlers
+$btnCheckUpdates.Add_Click({ Check-Upgrades })
+
+$btnUpgradeAll.Add_Click({
+    $txtStatusFooter.Text = "Upgrading ALL packages..."
+    $pbInstall.IsIndeterminate = $true
+    Start-Process "winget" "upgrade --all --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait
+    $pbInstall.IsIndeterminate = $false
+    Check-Upgrades # Refresh list
+})
+
+$btnInstallUpgrade.Add_Click({
+    if ($lvUpdates.ItemsSource) {
+        $sel = @(); foreach ($i in $lvUpdates.ItemsSource) { if ($i.IsSelected) { $sel += $i } }
+        Install-Apps $sel
+    }
+})
+
+# PIN CONTEXT MENU HANDLERS (FIXED & AUTO-REFRESH & SILENT)
+$cmPin.Add_Click({
+    $item = $this.CommandParameter
+    if ($item) {
+        $txtStatusFooter.Text = "Pinning $($item.Name)..."
+        Start-Process "winget" -ArgumentList "pin add --id `"$($item.Id)`"" -NoNewWindow -Wait
+        Start-Sleep -Milliseconds 200 # Brief pause to ensure file system update
+        Check-Upgrades # Auto Refresh
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("Error: Item data missing. Please try selecting the row first.", "Error")
+    }
+})
+
+$cmUnpin.Add_Click({
+    $item = $this.CommandParameter
+    if ($item) {
+        $txtStatusFooter.Text = "Unpinning $($item.Name)..."
+        Start-Process "winget" -ArgumentList "pin remove --id `"$($item.Id)`"" -NoNewWindow -Wait
+        Start-Sleep -Milliseconds 200
+        Check-Upgrades # Auto Refresh
+    }
+})
+
+
 function Install-Apps($list) {
     if ($list.Count -eq 0) { return }
     $pbInstall.IsIndeterminate = $false; $pbInstall.Maximum = $list.Count; $pbInstall.Value = 0
     foreach ($app in $list) {
         $txtStatusFooter.Text = "Installing: $($app.Name)..."; [System.Windows.Forms.Application]::DoEvents()
-        $src = "--source winget"; if ($app.Source -match "msstore") { $src = "--source msstore" }
-        Start-Process "winget" "install --id $($app.Id) -e --silent --accept-package-agreements --accept-source-agreements $src" -NoNewWindow -Wait
+
+        # Handle simple object vs XML object differences
+        $id = if ($app.Id) { $app.Id } else { $app.PackageIdentifier }
+
+        # Determine source if possible
+        $srcArg = "--source winget"
+        if ($app.Source -match "msstore") { $srcArg = "--source msstore" }
+
+        # Try upgrade first, then install (Best Practice)
+        Start-Process "winget" "upgrade --id $id --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
+        if ($LASTEXITCODE -ne 0) {
+             Start-Process "winget" "install --id $id -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
+        }
         $pbInstall.Value++
     }
     $txtStatusFooter.Text = "Ready."
@@ -794,7 +1088,17 @@ $txtAuthorLink.Add_MouseLeftButtonDown({ Start-Process "https://www.osmanonurkoc
 # --- STARTUP ---
 $window.Add_Loaded({
     if ($tabCategories.Items.Count -gt 0) { $tabCategories.SelectedIndex = 0 } else { $tabFixedTools.SelectedIndex = 0 }
-    Set-Theme $true
+
+    # SYSTEM THEME DETECTION
+    $isSystemLight = $false
+    try {
+        $reg = Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -ErrorAction SilentlyContinue
+        $isSystemLight = ($reg.AppsUseLightTheme -eq 1)
+    } catch { }
+
+    $script:isDark = -not $isSystemLight
+    Set-Theme $script:isDark
+
     Fetch-Repo
 })
 
