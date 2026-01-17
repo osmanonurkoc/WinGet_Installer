@@ -22,6 +22,8 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
   <img src="images/screenshot2.png" width="85%" alt="Backup and Restore" />
   <br/>
   <img src="images/screenshot3.png" width="85%" alt="Search Repository" />
+  <br/>
+  <img src="images/screenshot4.png" width="85%" alt="Updates" />
 </p>
 
 ---
@@ -37,6 +39,7 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
 * **Modern UI:** A clean WPF interface with a built-in Dark/Light theme toggle.
 * **Local App Support:** Can trigger local `.exe` or `.msi` installers from a `Programs` folder.
 * **Silent Operation:** Hides the background PowerShell console window automatically.
+* **App Upgrades:** Unified view for Upgrades and Pinned applications with visual separator.
 
 ## 🚀 How to Run
 
