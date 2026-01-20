@@ -47,7 +47,7 @@ public class Win32 {
 if (-not ([System.Management.Automation.PSTypeName]'Win32').Type) { Add-Type -TypeDefinition $code -Language CSharp }
 
 $hwnd = [Win32]::GetConsoleWindow()
-if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 0) }
+if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 6) }
 
 # --- CONFIGURATION ---
 $ScriptDir = $PSScriptRoot
@@ -1025,11 +1025,8 @@ function Install-Apps($list) {
         $srcArg = "--source winget"
         if ($app.Source -match "msstore") { $srcArg = "--source msstore" }
 
-        # Try upgrade first, then install (Best Practice)
-        Start-Process "winget" "upgrade --id $id --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
-        if ($LASTEXITCODE -ne 0) {
-             Start-Process "winget" "install --id $id -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
-        }
+        Start-Process "winget" -ArgumentList "install --id $id -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
+
         $pbInstall.Value++
     }
     $txtStatusFooter.Text = "Ready."
