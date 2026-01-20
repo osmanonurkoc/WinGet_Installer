@@ -43,10 +43,18 @@ A modern, dark-mode compatible GUI wrapper for the Windows Package Manager (Wing
 
 ## 🚀 How to Run
 
-1.  Download the latest release zip.
-2.  Extract the archive.
-3.  Right-click `WinGet_Installer.ps1`.
-4.  Select **Run with PowerShell**.
+#### Option 1: Using the Executable (Recommended)
+1. Download the latest `WinGet_Installer.exe` from the **[Releases Page](https://github.com/osmanonurkoc/AdBlockDNS/releases/latest)**.
+2. Download `config.xml` from source code. Or use the portable version.
+3. Double-click `WinGet_Installer.exe` to run.
+
+#### Option 2: Running the Script (For Developers)
+1. Download the source code.
+2. Right-click `WinGet_Installer.ps1` and select **Run with PowerShell**.
+   * *Note:* If you encounter an Execution Policy error, run this command in PowerShell once:
+     ```powershell
+     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+     ```
 
 > **Note:** If you run into execution policy errors, open PowerShell as Admin and run: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`.
 
