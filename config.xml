@@ -126,6 +126,7 @@
       <App Name="Discord" Id="Discord.Discord" />
       <App Name="Discord PTB" Id="Discord.Discord.PTB" />
       <App Name="Element" Id="Element.Element" />
+      <App Name="Jitsi" Id="Jitsi.Meet" />
       <App Name="Ferdium" Id="Ferdium.Ferdium" />
       <App Name="Signal" Id="OpenWhisperSystems.Signal" />
       <App Name="Slack" Id="SlackTechnologies.Slack" />
