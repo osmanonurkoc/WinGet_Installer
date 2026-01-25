@@ -281,6 +281,40 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
             </Setter>
         </Style>
 
+        <Style x:Key="InstallButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ButtonTextForeground}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentHover}"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="Button" x:Key="IconButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -426,7 +460,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                             </Grid>
                         </Border>
 
-                         <Button Name="btnInstall" Grid.Row="2" Grid.ColumnSpan="2" Content="INSTALL SELECTED (CONFIG)"
+                         <Button Name="btnInstall" Style="{StaticResource InstallButtonStyle}" Grid.Row="2" Grid.ColumnSpan="2" Content="INSTALL SELECTED (CONFIG)"
                             FontWeight="Bold" Background="{DynamicResource Accent}"
                             Foreground="{DynamicResource ButtonTextForeground}"
                             FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0" HorizontalAlignment="Stretch">
@@ -470,7 +504,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                             </ListView.View>
                         </ListView>
 
-                        <Button Name="btnInstallSearch" Grid.Row="2" Content="INSTALL CHECKED ITEMS"
+                        <Button Name="btnInstallSearch" Style="{StaticResource InstallButtonStyle}" Grid.Row="2" Content="INSTALL CHECKED ITEMS"
                             FontWeight="Bold" Background="{DynamicResource Accent}"
                             Foreground="{DynamicResource ButtonTextForeground}"
                             FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0">
@@ -521,7 +555,7 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(100)
                             </ListView.View>
                         </ListView>
 
-                        <Button Name="btnInstallUpgrade" Grid.Row="2" Content="UPGRADE SELECTED"
+                        <Button Name="btnInstallUpgrade" Style="{StaticResource InstallButtonStyle}" Grid.Row="2" Content="UPGRADE SELECTED"
                             FontWeight="Bold" Background="{DynamicResource Accent}"
                             Foreground="{DynamicResource ButtonTextForeground}"
                             FontSize="14" Height="45" Cursor="Hand" Margin="0,15,0,0">
@@ -603,16 +637,16 @@ function Set-Theme {
     if ($dark) {
         $res["BgBase"] = $c.ConvertFromString("#202020"); $res["BgCard"] = $c.ConvertFromString("#2b2b2b"); $res["BgLayer"] = $c.ConvertFromString("#252525")
         $res["BgFooter"] = $c.ConvertFromString("#1c1c1c"); $res["BgInput"] = $c.ConvertFromString("#333333"); $res["BgHover"] = $c.ConvertFromString("#3e3e3e")
-        $res["BorderColor"] = $c.ConvertFromString("#454545"); $res["TextPrimary"] = $c.ConvertFromString("#ffffff"); $res["TextSecondary"] = $c.ConvertFromString("#aaaaaa")
-        $res["Accent"] = $c.ConvertFromString("#4cc2ff"); $res["AccentLow"] = $c.ConvertFromString("#334cc2ff"); $res["ScrollThumb"] = $c.ConvertFromString("#666666")
+        $res["BorderColor"] = $c.ConvertFromString("#666666"); $res["TextPrimary"] = $c.ConvertFromString("#ffffff"); $res["TextSecondary"] = $c.ConvertFromString("#aaaaaa")
+        $res["Accent"] = $c.ConvertFromString("#4cc2ff"); $res["AccentLow"] = $c.ConvertFromString("#334cc2ff"); $res["AccentHover"] = $c.ConvertFromString("#7dd3ff"); $res["ScrollThumb"] = $c.ConvertFromString("#666666")
         $res["ButtonTextForeground"] = $c.ConvertFromString("#000000"); $res["IconBrush"] = $c.ConvertFromString("#ffffff")
         $iconThemeHolder.Content = $window.Resources["IconSun"]
         try { $hwnd = [System.Diagnostics.Process]::GetCurrentProcess().MainWindowHandle; if($hwnd -ne 0){[Win32]::SetDarkMode($hwnd, $true)} } catch {}
     } else {
         $res["BgBase"] = $c.ConvertFromString("#F0F0F0"); $res["BgCard"] = $c.ConvertFromString("#FFFFFF"); $res["BgLayer"] = $c.ConvertFromString("#FFFFFF")
         $res["BgFooter"] = $c.ConvertFromString("#D0D0D0"); $res["BgInput"] = $c.ConvertFromString("#FFFFFF"); $res["BgHover"] = $c.ConvertFromString("#F5F5F5")
-        $res["BorderColor"] = $c.ConvertFromString("#D0D0D0"); $res["TextPrimary"] = $c.ConvertFromString("#000000"); $res["TextSecondary"] = $c.ConvertFromString("#505050")
-        $res["Accent"] = $c.ConvertFromString("#0067c0"); $res["AccentLow"] = $c.ConvertFromString("#330067c0"); $res["ScrollThumb"] = $c.ConvertFromString("#909090")
+        $res["BorderColor"] = $c.ConvertFromString("#909090"); $res["TextPrimary"] = $c.ConvertFromString("#000000"); $res["TextSecondary"] = $c.ConvertFromString("#505050")
+        $res["Accent"] = $c.ConvertFromString("#0067c0"); $res["AccentLow"] = $c.ConvertFromString("#330067c0"); $res["AccentHover"] = $c.ConvertFromString("#004a8f"); $res["ScrollThumb"] = $c.ConvertFromString("#909090")
         $res["ButtonTextForeground"] = $c.ConvertFromString("#ffffff"); $res["IconBrush"] = $c.ConvertFromString("#000000")
         $iconThemeHolder.Content = $window.Resources["IconMoon"]
         try { $hwnd = [System.Diagnostics.Process]::GetCurrentProcess().MainWindowHandle; if($hwnd -ne 0){[Win32]::SetDarkMode($hwnd, $false)} } catch {}
