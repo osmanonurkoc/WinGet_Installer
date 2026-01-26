@@ -34,8 +34,10 @@ public class Win32 {
     [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("dwmapi.dll", PreserveSig = true)] public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+    [DllImport("kernel32.dll")] public static extern bool AllocConsole();
 
     public const int SW_HIDE = 0;
+    public const int SW_SHOW = 5;
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     public static void SetDarkMode(IntPtr hwnd, bool enabled) {
@@ -53,6 +55,7 @@ if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 6) }
 $ScriptDir = $PSScriptRoot
 $xmlPath = "$ScriptDir\config.xml"
 
+# Handle execution from different contexts (e.g., ISE, VSCode)
 if (-not (Test-Path "$ScriptDir\Programs")) {
     try {
         $parentProc = Get-CimInstance Win32_Process -Filter "ProcessId = $PID"
@@ -71,15 +74,16 @@ $script:RepoCache = @()
 $script:isRepoFetched = $false
 $script:activeProcess = $null
 $script:activeOperation = ""
-$script:RestoreQueue = @()
-$script:CurrentRestoreItem = $null
+# Queue for Non-Blocking Installation Loop
+$script:InstallQueue = @()
+$script:CurrentInstallItem = $null
 $script:PinnedApps = @()
 
-# --- TIMER (ASYNC HANDLER) ---
+# --- TIMER (ASYNC EVENT LOOP) ---
 $timer = New-Object System.Windows.Threading.DispatcherTimer
-$timer.Interval = [TimeSpan]::FromMilliseconds(100)
+$timer.Interval = [TimeSpan]::FromMilliseconds(200)
 
-# --- XAML UI ---
+# --- XAML UI DEFINITION ---
 [xml]$xaml = @"
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -618,8 +622,6 @@ $pbInstall = $window.FindName("pbInstall")
 $btnThemeToggle = $window.FindName("btnThemeToggle")
 $iconThemeHolder = $window.FindName("iconThemeHolder")
 $txtAuthorLink = $window.FindName("txtAuthorLink")
-
-# Update Controls (New)
 $btnCheckUpdates = $window.FindName("btnCheckUpdates")
 $btnUpgradeAll = $window.FindName("btnUpgradeAll")
 $lvUpdates = $window.FindName("lvUpdates")
@@ -653,14 +655,15 @@ function Set-Theme {
     }
 }
 
-# --- ASYNC PROCESS LOGIC (DispatcherTimer) ---
+# --- ASYNC PROCESS LOGIC (STATE MACHINE) ---
 $timer.Add_Tick({
     if ($script:activeProcess -ne $null) {
         if ($script:activeProcess.HasExited) {
             $exitCode = $script:activeProcess.ExitCode
             $script:activeProcess = $null # Reset immediately
+            Write-Host "Process Exited. Op: $script:activeOperation"
 
-            # --- FETCH ---
+            # --- CACHE FETCH ---
             if ($script:activeOperation -eq "Fetch") {
                 $timer.Stop()
                 $pbInstall.IsIndeterminate = $false
@@ -709,39 +712,35 @@ $timer.Add_Tick({
                     $txtStatusFooter.Text = "Online Search: $($newResults.Count) results."
                 }
             }
-            # --- CHECK UPDATES ---
-            elseif ($script:activeOperation -eq "CheckUpdates") {
+            # --- UPDATE: STEP 1 (PINS FETCHED) -> START STEP 2 (UPGRADE FETCH) ---
+            elseif ($script:activeOperation -eq "FetchPins") {
+                 Write-Host "Pins fetched. Starting Upgrade Fetch..."
+                 $txtStatusFooter.Text = "Checking for Upgrades..."
+                 Start-AsyncProcess "upgrade --include-unknown --include-pinned" "FetchUpgrades" "$env:TEMP\winget_upgrades.tmp"
+            }
+            # --- UPDATE: STEP 2 (UPGRADES FETCHED) -> RENDER UI ---
+            elseif ($script:activeOperation -eq "FetchUpgrades") {
                 $timer.Stop()
                 $pbInstall.IsIndeterminate = $false
                 $btnCheckUpdates.IsEnabled = $true
                 $tempUpgradeFile = "$env:TEMP\winget_upgrades.tmp"
                 $tempPinFile = "$env:TEMP\winget_pins.tmp"
 
-                # 1. PARSE PINS (RIGHT-TO-LEFT PARSING FIX)
+                Write-Host "Rendering Updates UI..."
+
+                # 1. PARSE PINS
                 $pinnedMap = @{}
                 if (Test-Path $tempPinFile) {
                      $pLines = Get-Content $tempPinFile -Encoding UTF8
                      foreach ($line in $pLines) {
                         if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
-
-                        # Fix: Split by ANY whitespace, handle potentially merged columns
                         $parts = $line -split "\s+"
-
-                        # Require at least Name, ID, Version (3 parts)
-                        if ($parts.Count -ge 4) {
-                             # Parse from Right to Left
-                             $pinType = $parts[-1]
-                             $source  = $parts[-2]
-                             $version = $parts[-3]
-                             $id      = $parts[-4]
-
-                             # Reconstruct Name (Everything before ID)
+                        if ($parts.Count -ge 3) {
+                             $pinType = $parts[-1]; $source = $parts[-2]; $version = $parts[-3]; $id = $parts[-4]
+                             # Reconstruct Name
                              $nameParts = $parts[0..($parts.Count - 5)]
                              $name = $nameParts -join " "
-
-                             # Safety check
                              if ([string]::IsNullOrWhiteSpace($id)) { continue }
-
                              $pObj = New-Object PSObject
                              $pObj | Add-Member -MemberType NoteProperty -Name "Name" -Value $name
                              $pObj | Add-Member -MemberType NoteProperty -Name "Id" -Value $id
@@ -750,7 +749,6 @@ $timer.Add_Tick({
                              $pObj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Pinned"
                              $pObj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["Accent"]
                              $pObj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $false
-
                              $pinnedMap[$id] = $pObj
                          }
                      }
@@ -764,11 +762,9 @@ $timer.Add_Tick({
                     $lines = Get-Content $tempUpgradeFile -Encoding UTF8
                     foreach ($line in $lines) {
                         if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
-
                         $parts = $line -split "\s{2,}"
                         if ($parts.Count -ge 4) {
                             $id = $parts[1].Trim()
-
                             $obj = New-Object PSObject
                             $obj | Add-Member -MemberType NoteProperty -Name "Name" -Value $parts[0].Trim()
                             $obj | Add-Member -MemberType NoteProperty -Name "Id" -Value $id
@@ -776,14 +772,12 @@ $timer.Add_Tick({
                             $obj | Add-Member -MemberType NoteProperty -Name "NewVer" -Value $parts[3].Trim()
 
                             if ($pinnedMap.ContainsKey($id)) {
-                                # Pinned but has update
                                 $obj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Pinned"
                                 $obj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["Accent"]
                                 $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $false
                                 $pinnedUpgrades += $obj
                                 $pinnedMap.Remove($id)
                             } else {
-                                # Normal upgrade
                                 $obj | Add-Member -MemberType NoteProperty -Name "Status" -Value "Ready"
                                 $obj | Add-Member -MemberType NoteProperty -Name "ColorBrush" -Value $window.Resources["TextPrimary"]
                                 $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $true
@@ -793,50 +787,35 @@ $timer.Add_Tick({
                     }
                 }
 
-                # 3. ADD REMAINING PINS
                 $remainingPins = $pinnedMap.Values | ForEach-Object { $_ }
-
-                # 4. BUILD LIST WITH VISUAL SEPARATOR
                 $finalList = @()
                 if ($upgrades.Count -gt 0) { $finalList += $upgrades }
-
-                $totalPins = $pinnedUpgrades.Count + $remainingPins.Count
-                if ($upgrades.Count -gt 0 -and $totalPins -gt 0) {
+                if ($upgrades.Count -gt 0 -and ($pinnedUpgrades.Count + $remainingPins.Count) -gt 0) {
                     $sep = New-Object PSObject
-                    $sep | Add-Member NoteProperty Name ""
-                    $sep | Add-Member NoteProperty Id ""
-                    $sep | Add-Member NoteProperty CurrentVer ""
-                    $sep | Add-Member NoteProperty NewVer ""
-                    $sep | Add-Member NoteProperty Status "Separator"
-                    $sep | Add-Member NoteProperty ColorBrush "Transparent"
-                    $sep | Add-Member NoteProperty IsSelected $false
+                    $sep | Add-Member NoteProperty Name ""; $sep | Add-Member NoteProperty Id ""; $sep | Add-Member NoteProperty CurrentVer ""; $sep | Add-Member NoteProperty NewVer ""; $sep | Add-Member NoteProperty Status "Separator"; $sep | Add-Member NoteProperty ColorBrush "Transparent"; $sep | Add-Member NoteProperty IsSelected $false
                     $finalList += $sep
                 }
-
                 $finalList += $pinnedUpgrades
                 $finalList += $remainingPins
 
                 $lvUpdates.ItemsSource = $finalList
-                $txtStatusFooter.Text = "Found $($upgrades.Count) updates. Pinned: $totalPins."
+                $txtStatusFooter.Text = "Found $($upgrades.Count) updates. Pinned: $($pinnedUpgrades.Count + $remainingPins.Count)."
             }
-            # --- RESTORE CHECK PHASE ---
-            elseif ($script:activeOperation -eq "RestoreCheck") {
-                if ($exitCode -eq 0) {
-                    $txtStatusFooter.Text = "Skipping (Already Installed): $($script:CurrentRestoreItem.PackageIdentifier) ($($pbInstall.Value)/$($pbInstall.Maximum))"
-                    Process-Next-Restore-Item
-                } else {
-                    $script:activeOperation = "RestoreInstall"
-                    $txtStatusFooter.Text = "Installing: $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
-
-                    $srcArg = ""
-                    if ($script:CurrentRestoreItem.Source -eq "msstore") { $srcArg = "--source msstore" }
-
-                    $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($script:CurrentRestoreItem.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
-                }
+            # --- PIN / UNPIN OPERATIONS ---
+            elseif ($script:activeOperation -eq "PinOperation") {
+                 Write-Host "Pin Op Finished. Refreshing list..."
+                 Check-Upgrades # Chain back to check
             }
-            # --- RESTORE INSTALL PHASE ---
-            elseif ($script:activeOperation -eq "RestoreInstall") {
-                Process-Next-Restore-Item
+            # --- INSTALL QUEUE HANDLING ---
+            elseif ($script:activeOperation -eq "ProcessQueue") {
+                Process-Next-Install-Item
+            }
+            # --- UPGRADE ALL ---
+            elseif ($script:activeOperation -eq "UpgradeAll") {
+                $timer.Stop()
+                $pbInstall.IsIndeterminate = $false
+                $txtStatusFooter.Text = "Upgrade All Completed."
+                Check-Upgrades
             }
             # --- BACKUP ---
             elseif ($script:activeOperation -eq "Backup") {
@@ -849,29 +828,34 @@ $timer.Add_Tick({
     }
 })
 
-function Process-Next-Restore-Item {
-    $pbInstall.Value += 1
-    if ($script:RestoreQueue.Count -gt 0) {
-        $script:CurrentRestoreItem = $script:RestoreQueue[0]
-        # SAFE QUEUE REDUCTION
-        $script:RestoreQueue = @($script:RestoreQueue | Select-Object -Skip 1)
+function Process-Next-Install-Item {
+    $pbInstall.IsIndeterminate = $false
 
-        # MSStore Optimization: Skip 'list' check
-        if ($script:CurrentRestoreItem.Source -eq "msstore") {
-             $script:activeOperation = "RestoreInstall"
-             $txtStatusFooter.Text = "Installing (Store App): $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
-             $script:activeProcess = Start-Process "winget" -ArgumentList "install --id $($script:CurrentRestoreItem.PackageIdentifier) --silent --accept-package-agreements --accept-source-agreements --source msstore" -NoNewWindow -PassThru
-        } else {
-             $script:activeOperation = "RestoreCheck"
-             $txtStatusFooter.Text = "Checking: $($script:CurrentRestoreItem.PackageIdentifier)... ($($pbInstall.Value)/$($pbInstall.Maximum))"
-             $script:activeProcess = Start-Process "winget" -ArgumentList "list -e --id $($script:CurrentRestoreItem.PackageIdentifier)" -NoNewWindow -PassThru
-        }
+    if ($script:InstallQueue.Count -gt 0) {
+        $script:CurrentInstallItem = $script:InstallQueue[0]
+        # Remove from queue
+        $script:InstallQueue = @($script:InstallQueue | Select-Object -Skip 1)
+
+        $pbInstall.Value += 1
+        $name = ""; if ($script:CurrentInstallItem.Name) { $name = $script:CurrentInstallItem.Name } else { $name = $script:CurrentInstallItem.PackageIdentifier }
+        $txtStatusFooter.Text = "Installing: $name ... ($($pbInstall.Value)/$($pbInstall.Maximum))"
+
+        # Determine ID and Source
+        $id = if ($script:CurrentInstallItem.Id) { $script:CurrentInstallItem.Id } else { $script:CurrentInstallItem.PackageIdentifier }
+        $srcArg = "--source winget"
+        if ($script:CurrentInstallItem.Source -match "msstore") { $srcArg = "--source msstore" }
+
+        # RE-ARM Timer for "ProcessQueue"
+        $script:activeOperation = "ProcessQueue"
+
+        Write-Host "Starting Install: $id"
+        $script:activeProcess = Start-Process "winget" -ArgumentList "install --id `"$id`" -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
+        # Timer is already running, it will catch the exit of this process
     } else {
         $timer.Stop()
         $pbInstall.IsIndeterminate = $false
-        $txtStatusFooter.Text = "Restore completed."
-        $txtBackupStatus.Text = "Restore completed."
-        [System.Windows.Forms.MessageBox]::Show("Restore Completed Successfully!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        $txtStatusFooter.Text = "All operations completed."
+        [System.Windows.Forms.MessageBox]::Show("Completed!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
     }
 }
 
@@ -921,8 +905,8 @@ function Check-Upgrades {
     $btnCheckUpdates.IsEnabled = $false
     $txtStatusFooter.Text = "Checking for Pins and Updates..."
 
-    $p = Start-Process "winget" -ArgumentList "pin list" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "$env:TEMP\winget_pins.tmp"
-    Start-AsyncProcess "upgrade --include-unknown --include-pinned" "CheckUpdates" "$env:TEMP\winget_upgrades.tmp"
+    # STEP 1: Fetch Pins (Async) - NO WAITING HERE
+    Start-AsyncProcess "pin list" "FetchPins" "$env:TEMP\winget_pins.tmp"
 }
 
 # --- VIEW SWITCHING ---
@@ -969,9 +953,8 @@ $tabFixedTools.Add_SelectionChanged({
     elseif ($tabFixedTools.SelectedItem -eq $tabBackup) { Switch-View "Backup" }
 })
 
-# --- LOCAL APPS (ROBUST FIX) ---
+# --- LOCAL APPS ---
 if ($configLoaded -and $config.InstallerConfig.LocalApps.App) {
-    # Ensure it's an array to handle single items correctly
     $localApps = @($config.InstallerConfig.LocalApps.App)
     foreach ($localApp in $localApps) {
         $btn = New-Object System.Windows.Controls.Button; $btn.Content = $localApp.Name; $btn.Tag = @{ Path = $localApp.Path; Args = $localApp.Args }
@@ -986,6 +969,22 @@ if ($configLoaded -and $config.InstallerConfig.LocalApps.App) {
     }
 }
 
+# --- INSTALLATION MANAGER ---
+function Install-Apps-Async($list) {
+    if ($list.Count -eq 0) { return }
+    if ($script:activeProcess -ne $null) { [System.Windows.Forms.MessageBox]::Show("Please wait for the current process to finish.", "Busy"); return }
+
+    $script:InstallQueue = $list
+    $pbInstall.IsIndeterminate = $false
+    $pbInstall.Maximum = $script:InstallQueue.Count
+    $pbInstall.Value = 0
+
+    # Trigger the loop
+    $script:activeProcess = [PSCustomObject]@{ HasExited = $true; ExitCode = 0 } # Dummy process to kickstart the timer loop
+    $script:activeOperation = "ProcessQueue"
+    $timer.Start()
+}
+
 # --- EVENT HANDLERS ---
 $txtSearch.Add_TextChanged({ Filter-Repo $txtSearch.Text })
 $txtSearch.Add_KeyDown({ if ($_.Key -eq "Enter") { Search-Online $txtSearch.Text } })
@@ -994,13 +993,13 @@ $btnUpdateRepo.Add_Click({ Fetch-Repo })
 $btnInstall.Add_Click({
     if (-not $configLoaded) { return }
     $apps = @(); $config.InstallerConfig.WingetApps.Category | ForEach-Object { $_.App | ForEach-Object { if ($script:selectionState[$_.Id]) { $apps += $_ } } }
-    Install-Apps $apps
+    Install-Apps-Async $apps
 })
 
 $btnInstallSearch.Add_Click({
     if ($lvSearchResults.ItemsSource) {
         $sel = @(); foreach ($i in $lvSearchResults.ItemsSource) { if ($i.IsSelected) { $sel += $i } }
-        Install-Apps $sel
+        Install-Apps-Async $sel
     }
 })
 
@@ -1008,63 +1007,34 @@ $btnInstallSearch.Add_Click({
 $btnCheckUpdates.Add_Click({ Check-Upgrades })
 
 $btnUpgradeAll.Add_Click({
+    if ($script:activeProcess) { return }
     $txtStatusFooter.Text = "Upgrading ALL packages..."
-    $pbInstall.IsIndeterminate = $true
-    Start-Process "winget" "upgrade --all --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait
-    $pbInstall.IsIndeterminate = $false
-    Check-Upgrades # Refresh list
+    Start-AsyncProcess "upgrade --all --silent --accept-package-agreements --accept-source-agreements" "UpgradeAll" $null
 })
 
 $btnInstallUpgrade.Add_Click({
     if ($lvUpdates.ItemsSource) {
         $sel = @(); foreach ($i in $lvUpdates.ItemsSource) { if ($i.IsSelected) { $sel += $i } }
-        Install-Apps $sel
+        Install-Apps-Async $sel
     }
 })
 
-# PIN CONTEXT MENU HANDLERS (FIXED & AUTO-REFRESH & SILENT)
+# PIN CONTEXT MENU HANDLERS
 $cmPin.Add_Click({
     $item = $this.CommandParameter
-    if ($item) {
+    if ($item -and (-not $script:activeProcess)) {
         $txtStatusFooter.Text = "Pinning $($item.Name)..."
-        Start-Process "winget" -ArgumentList "pin add --id `"$($item.Id)`"" -NoNewWindow -Wait
-        Start-Sleep -Milliseconds 200 # Brief pause to ensure file system update
-        Check-Upgrades # Auto Refresh
-    } else {
-        [System.Windows.Forms.MessageBox]::Show("Error: Item data missing. Please try selecting the row first.", "Error")
+        Start-AsyncProcess "pin add --id `"$($item.Id)`"" "PinOperation" $null
     }
 })
 
 $cmUnpin.Add_Click({
     $item = $this.CommandParameter
-    if ($item) {
+    if ($item -and (-not $script:activeProcess)) {
         $txtStatusFooter.Text = "Unpinning $($item.Name)..."
-        Start-Process "winget" -ArgumentList "pin remove --id `"$($item.Id)`"" -NoNewWindow -Wait
-        Start-Sleep -Milliseconds 200
-        Check-Upgrades # Auto Refresh
+        Start-AsyncProcess "pin remove --id `"$($item.Id)`"" "PinOperation" $null
     }
 })
-
-
-function Install-Apps($list) {
-    if ($list.Count -eq 0) { return }
-    $pbInstall.IsIndeterminate = $false; $pbInstall.Maximum = $list.Count; $pbInstall.Value = 0
-    foreach ($app in $list) {
-        $txtStatusFooter.Text = "Installing: $($app.Name)..."; [System.Windows.Forms.Application]::DoEvents()
-
-        # Handle simple object vs XML object differences
-        $id = if ($app.Id) { $app.Id } else { $app.PackageIdentifier }
-
-        # Determine source if possible
-        $srcArg = "--source winget"
-        if ($app.Source -match "msstore") { $srcArg = "--source msstore" }
-
-        Start-Process "winget" -ArgumentList "install --id $id -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -Wait
-
-        $pbInstall.Value++
-    }
-    $txtStatusFooter.Text = "Ready."
-}
 
 $btnBackup.Add_Click({
     $sfd = New-Object System.Windows.Forms.SaveFileDialog; $sfd.Filter = "JSON|*.json"; $sfd.FileName = "backup.json"
@@ -1081,12 +1051,11 @@ $btnRestore.Add_Click({
         try {
             $jsonContent = Get-Content $ofd.FileName | ConvertFrom-Json
             if ($jsonContent.Sources) {
-                # FLATTEN PACKAGES AND INJECT SOURCE
+                # FLATTEN PACKAGES
                 $flatList = @()
                 foreach ($source in $jsonContent.Sources) {
                     $sName = "winget"
                     if ($source.SourceDetails.Name) { $sName = $source.SourceDetails.Name }
-
                     if ($source.Packages) {
                         foreach ($pkg in $source.Packages) {
                             $obj = $pkg | Select-Object *
@@ -1095,17 +1064,8 @@ $btnRestore.Add_Click({
                         }
                     }
                 }
-
-                # LOAD QUEUE
-                $script:RestoreQueue = $flatList
-                $pbInstall.IsIndeterminate = $false
-                $pbInstall.Maximum = $script:RestoreQueue.Count
-                $pbInstall.Value = 0
-
-                # START LOOP
-                $timer.Start()
-                $script:activeProcess = [PSCustomObject]@{ HasExited = $true; ExitCode = 0 } # Dummy kickstart
-                Process-Next-Restore-Item
+                # USE COMMON INSTALL QUEUE
+                Install-Apps-Async $flatList
             }
         } catch {
             [System.Windows.Forms.MessageBox]::Show("Invalid JSON File!", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
