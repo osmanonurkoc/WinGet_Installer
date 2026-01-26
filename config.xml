@@ -17,10 +17,12 @@
       <App Name="KDE Connect" Id="KDE.KDEConnect" />
       <App Name="Meld" Id="Meld.Meld" />
       <App Name="NanaZip" Id="M2Team.NanaZip" />
+      <App Name="WinRAR" Id="RARLab.WinRAR" />
       <App Name="PowerToys" Id="Microsoft.PowerToys" />
       <App Name="Quick Share from Google" Id="Google.QuickShare" />
       <App Name="Rufus" Id="Rufus.Rufus" />
       <App Name="Ventoy" Id="Ventoy.Ventoy" />
+      <App Name="PowerISO" Id="PowerSoftware.PowerISO" />
       <App Name="WinDirStat" Id="WinDirStat.WinDirStat" />
       <App Name="Windows Terminal" Id="Microsoft.WindowsTerminal" />
       <App Name="balenaEtcher" Id="Balena.Etcher" />
@@ -159,6 +161,7 @@
       <App Name="Notion" Id="Notion.Notion" />
       <App Name="Adobe Acrobat Reader DC" Id="Adobe.Acrobat.Reader.64-bit" />
       <App Name="Foxit PDF Reader" Id="Foxit.FoxitReader" />
+      <App Name="Foxit PDF Editor" Id="Foxit.PhantomPDF.Subscription" />
     </Category>
 
     <Category Name="Framework">
