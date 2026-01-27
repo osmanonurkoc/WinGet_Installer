@@ -245,6 +245,7 @@
     <App Name="Topaz Photo AI" Path="Programs\TopazPhotoAI.exe" />
     <App Name="Topaz Video AI" Path="Programs\TopazVideoAI.exe" />
     <App Name="Java Runtime" Path="Programs\Java8.exe" />
+    <App Name="PowerShell Studio 2026" Path="Programs\PowerShell_Studio.exe" />
     <App Name="Rectify 11" Path="Programs\Rectify11Installer.exe" />
     <App Name="PowerShell Tweaks" Path="Programs\PowerShell_Tweaks.exe" />
     <App Name="Wallpaper Pack" Path="Programs\Wallpaper_Pack.exe" />
