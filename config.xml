@@ -219,6 +219,13 @@
       <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
       <App Name="Windhawk" Id="RamenSoftware.Windhawk" />
       <App Name="Mica For Everyone" Id="MicaForEveryone.MicaForEveryone" />
+      <App Name="Yasb" Id="AmN.yasb" />
+      <App Name="Zebar" Id="glzr-io.zebar" />
+      <App Name="GlazeWM" Id="GlazeWM" />
+      <App Name="komorebi" Id="LGUG2Z.komorebi" />
+      <App Name="komokana" Id="LGUG2Z.komokana" />
+      <App Name="whkd" Id="LGUG2Z.whkd" />
+      <App Name="masir" Id="LGUG2Z.masir" />
       <App Name="System Informer" Id="WinsiderSS.SystemInformer" />
       <App Name="Sysinternals Suite" Id="Microsoft.Sysinternals.Suite" />
     </Category>
