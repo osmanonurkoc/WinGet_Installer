@@ -48,6 +48,7 @@
       <App Name="Java SE" Id="Oracle.JDK.25" /> <App Name="Node JS" Id="OpenJS.NodeJS" />
       <App Name="JetBrains Toolbox" Id="JetBrains.Toolbox" />
       <App Name="JetBrains Rider" Id="JetBrains.Rider" />
+      <App Name="AutoIt" Id="AutoIt.AutoIt" />
       <App Name="Python Launcher" Id="Python.Launcher" />
       <App Name="APK Editor Studio" Id="AlexanderGorishnyak.APKEditorStudio" />
       <App Name="Inno Setup" Id="JRSoftware.InnoSetup" />
