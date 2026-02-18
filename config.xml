@@ -154,6 +154,7 @@
       <App Name="Joplin" Id="Joplin.Joplin" />
       <App Name="Obsidian" Id="Obsidian.Obsidian" />
       <App Name="MComix" Id="MComix.MComix" />
+      <App Name="Calibre" Id="calibre.calibre" />
       <App Name="Okular" Id="KDE.Okular" />
       <App Name="OnlyOffice" Id="ONLYOFFICE.DesktopEditors" />
       <App Name="OpenOffice" Id="Apache.OpenOffice" />
