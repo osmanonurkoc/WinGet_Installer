@@ -36,6 +36,10 @@
     </Category>
 
     <Category Name="Development">
+      <App Name="Google Antigravity" Id="Google.Antigravity" />
+      <App Name="Replit" Id="Replit.Replit" />
+      <App Name="Windsurf" Id="Codeium.Windsurf" />
+      <App Name="Cursor" Id="Anysphere.Cursor" />
       <App Name="Anaconda3" Id="Anaconda.Anaconda3" />
       <App Name="VS Code" Id="Microsoft.VisualStudioCode" />
       <App Name="Visual Studio Community 2026" Id="Microsoft.VisualStudio.Community" />
