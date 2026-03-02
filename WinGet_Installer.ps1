@@ -51,6 +51,54 @@ if (-not ([System.Management.Automation.PSTypeName]'Win32').Type) { Add-Type -Ty
 $hwnd = [Win32]::GetConsoleWindow()
 if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 6) }
 
+# --- WINGET HASH OVERRIDE CHECK ---
+$registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppInstaller"
+$registryName = "EnableHashOverride"
+$hashOverrideEnabled = $false
+
+try {
+    $regValue = Get-ItemProperty -Path $registryPath -Name $registryName -ErrorAction Stop
+    if ($regValue.$registryName -eq 1) {
+        $hashOverrideEnabled = $true
+    }
+} catch {
+    $hashOverrideEnabled = $false
+}
+
+if (-not $hashOverrideEnabled) {
+    Write-Host "Hash override not enabled. Requesting admin rights to configure system settings..."
+    $batContent = @'
+@echo off
+Title Winget Installer Launcher
+
+:: --- 1. ADMINISTRATOR PRIVILEGE CHECK ---
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting administrative privileges...
+    powershell -Command "Start-Process cmd -ArgumentList '/c %~dpnx0' -Verb RunAs"
+    exit
+)
+
+:: --- 2. REGISTRY SETTINGS (Running as Admin) ---
+echo Configuring system settings...
+
+:: PowerShell ExecutionPolicy Setting (Machine-wide)
+reg add "HKLM\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" /v ExecutionPolicy /t REG_SZ /d RemoteSigned /f >nul
+
+:: Winget EnableHashOverride Setting
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppInstaller" /v EnableHashOverride /t REG_DWORD /d 1 /f >nul
+
+exit
+'@
+    $batPath = "$env:TEMP\EnableHashOverride.bat"
+    Set-Content -Path $batPath -Value $batContent -Encoding UTF8
+
+    # Run the batch file explicitly as Admin so PowerShell can wait for it properly.
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$batPath`"" -Verb RunAs -Wait
+
+    Remove-Item -Path $batPath -Force -ErrorAction SilentlyContinue
+}
+
 # --- CONFIGURATION ---
 $ScriptDir = $PSScriptRoot
 $xmlPath = "$ScriptDir\config.xml"
@@ -849,7 +897,7 @@ function Process-Next-Install-Item {
         $script:activeOperation = "ProcessQueue"
 
         Write-Host "Starting Install: $id"
-        $script:activeProcess = Start-Process "winget" -ArgumentList "install --id `"$id`" -e --silent --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
+        $script:activeProcess = Start-Process "winget" -ArgumentList "install --id `"$id`" -e --silent --ignore-security-hash --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
         # Timer is already running, it will catch the exit of this process
     } else {
         $timer.Stop()
