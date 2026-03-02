@@ -110,7 +110,7 @@
       <App Name="Ubisoft Connect" Id="Ubisoft.Connect" />
       <App Name="GOG Galaxy" Id="GOG.Galaxy" />
       <App Name="Prism Launcher" Id="PrismLauncher.PrismLauncher" />
-      <App Name="Google Play Games" Id="Google.PlayGames" />
+      <App Name="Google Play Games" Id="Google.PlayGames.Beta" />
     </Category>
 
     <Category Name="Internet">
