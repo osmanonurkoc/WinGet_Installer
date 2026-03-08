@@ -66,7 +66,7 @@
       <App Name="Python 3.12" Id="Python.Python.3.12" />
     </Category>
 
-    <Category Name="Design">
+    <Category Name="Graphics">
       <App Name="ComfyUI" Id="Comfy.ComfyUI-Desktop" />
       <App Name="Converseen" Id="Faster3ck.Converseen" />
       <App Name="GIMP (Stable)" Id="GIMP.GIMP.3" />
@@ -77,6 +77,9 @@
       <App Name="IcoFX" Id="IcoFXSoftware.icofx" />
       <App Name="Paint.NET" Id="dotPDN.PaintDotNet" />
       <App Name="Figma" Id="Figma.Figma" />
+      <App Name="ImageGlass" Id="DuongDieuPhap.ImageGlass" />
+      <App Name="IrfanView" Id="IrfanSkiljan.IrfanView" />
+      <App Name="IrfanView PlugIns" Id="IrfanSkiljan.IrfanView.PlugIns" />
       <App Name="ShareX" Id="ShareX.ShareX" />
       <App Name="PicPick" Id="NGWIN.PicPick" />
 	  <App Name="LibreCAD" Id="LibreCAD.LibreCAD" />
@@ -91,7 +94,6 @@
       <App Name="Shotcut" Id="Meltytech.Shotcut" />
       <App Name="Kdenlive" Id="KDE.Kdenlive" />
       <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
-      <App Name="ImageGlass" Id="DuongDieuPhap.ImageGlass" />
       <App Name="OpenShot" Id="OpenShot.OpenShot" />
       <App Name="MP3Tag" Id="FlorianHeidenreich.Mp3tag" />
       <App Name="MKVToolNix" Id="MoritzBunkus.MKVToolNix" />
