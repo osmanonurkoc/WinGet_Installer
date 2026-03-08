@@ -890,8 +890,12 @@ function Process-Next-Install-Item {
 
         # Determine ID and Source
         $id = if ($script:CurrentInstallItem.Id) { $script:CurrentInstallItem.Id } else { $script:CurrentInstallItem.PackageIdentifier }
+
         $srcArg = "--source winget"
-        if ($script:CurrentInstallItem.Source -match "msstore") { $srcArg = "--source msstore" }
+        # Auto-detect MS Store apps by checking if the ID is exactly 12 alphanumeric characters
+        if ($script:CurrentInstallItem.Source -match "msstore" -or $id -match "^[a-zA-Z0-9]{12}$") {
+            $srcArg = "--source msstore"
+        }
 
         # RE-ARM Timer for "ProcessQueue"
         $script:activeOperation = "ProcessQueue"
