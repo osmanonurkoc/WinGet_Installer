@@ -889,19 +889,36 @@ function Process-Next-Install-Item {
         $txtStatusFooter.Text = "Installing: $name ... ($($pbInstall.Value)/$($pbInstall.Maximum))"
 
         # Determine ID and Source
-        $id = if ($script:CurrentInstallItem.Id) { $script:CurrentInstallItem.Id } else { $script:CurrentInstallItem.PackageIdentifier }
+        $rawId = if ($script:CurrentInstallItem.Id) { $script:CurrentInstallItem.Id } else { $script:CurrentInstallItem.PackageIdentifier }
+
+        # --- NEWLY ADDED: Separating ID and Arguments ---
+        # If there is a space in the Id, treat everything after the first space as extra parameters
+        $cleanId = $rawId
+        $extraArgs = ""
+        if ($rawId -match "\s") {
+            $parts = $rawId -split "\s+", 2  # Split the string into 2 parts at the first space
+            $cleanId = $parts[0].Trim()
+            $extraArgs = $parts[1].Trim()
+        }
 
         $srcArg = "--source winget"
         # Auto-detect MS Store apps by checking if the ID is exactly 12 alphanumeric characters
-        if ($script:CurrentInstallItem.Source -match "msstore" -or $id -match "^[a-zA-Z0-9]{12}$") {
+        if ($script:CurrentInstallItem.Source -match "msstore" -or $cleanId -match "^[a-zA-Z0-9]{12}$") {
             $srcArg = "--source msstore"
+        }
+
+        # Prevent duplicate source arguments if the user already provided one in the config
+        if ($extraArgs -match "--source") {
+            $srcArg = ""
         }
 
         # RE-ARM Timer for "ProcessQueue"
         $script:activeOperation = "ProcessQueue"
 
-        Write-Host "Starting Install: $id"
-        $script:activeProcess = Start-Process "winget" -ArgumentList "install --id `"$id`" -e --silent --ignore-security-hash --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
+        Write-Host "Starting Install: $cleanId | Extracted Args: $extraArgs"
+
+        # Execute the installation dynamically with separated clean ID and extra arguments
+        $script:activeProcess = Start-Process "winget" -ArgumentList "install --id `"$cleanId`" $extraArgs -e --silent --ignore-security-hash --accept-package-agreements --accept-source-agreements $srcArg" -NoNewWindow -PassThru
         # Timer is already running, it will catch the exit of this process
     } else {
         $timer.Stop()

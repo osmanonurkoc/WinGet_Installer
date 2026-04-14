@@ -221,7 +221,7 @@
     </Category>
 
     <Category Name="Miscellaneous">
-      <App Name="PowerShell 7-x64" Id="Microsoft.PowerShell" />
+      <App Name="PowerShell 7-x64" Id="Microsoft.PowerShell --installer-type wix --source winget --scope machine" />
       <App Name="gsudo" Id="gerardog.gsudo" />
       <App Name="neofetch-win" Id="nepnep.neofetch-win" />
       <App Name="starship" Id="Starship.Starship" />
