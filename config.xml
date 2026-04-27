@@ -88,15 +88,23 @@
 
     <Category Name="Media">
       <App Name="AIMP" Id="AIMP.AIMP" />
+      <App Name="Amarok" Id="KDE.Amarok" />
+      <App Name="Elisa" Id="KDE.Elisa" />
       <App Name="Audacity" Id="Audacity.Audacity" />
+      <App Name="Clementine" Id="Clementine.Clementine" />
       <App Name="HandBrake" Id="HandBrake.HandBrake" />
-      <App Name="K-Lite Codec Pack Std" Id="CodecGuide.K-LiteCodecPack.Standard" />
+      <App Name="K-Lite Codec Pack Basic" Id="CodecGuide.K-LiteCodecPack.Basic" />
+      <App Name="K-Lite Codec Pack Standard" Id="CodecGuide.K-LiteCodecPack.Standard" />
+      <App Name="K-Lite Codec Pack Full" Id="CodecGuide.K-LiteCodecPack.Full" />
+      <App Name="K-Lite Codec Pack Mega" Id="CodecGuide.K-LiteCodecPack.Mega" />
       <App Name="Shotcut" Id="Meltytech.Shotcut" />
       <App Name="Kdenlive" Id="KDE.Kdenlive" />
       <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
       <App Name="OpenShot" Id="OpenShot.OpenShot" />
       <App Name="MP3Tag" Id="FlorianHeidenreich.Mp3tag" />
       <App Name="MKVToolNix" Id="MoritzBunkus.MKVToolNix" />
+      <App Name="GOM Player" Id="GOMLab.GOMPlayer" />
+      <App Name="Haruna" Id="KDE.Haruna" />
       <App Name="VLC media player" Id="VideoLAN.VLC" />
       <App Name="Spotify" Id="Spotify.Spotify" />
       <App Name="iTunes" Id="Apple.iTunes" />
