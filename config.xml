@@ -9,6 +9,7 @@
       <App Name="AnyBurn" Id="PowerSoftware.AnyBurn" />
       <App Name="BitWarden" Id="BitWarden.BitWarden" />
       <App Name="Chrome Remote Desktop Host" Id="Google.ChromeRemoteDesktopHost" />
+      <App Name="DeskFlow" Id="Deskflow.Deskflow" />
       <App Name="7-Zip" Id="7zip.7zip" />
       <App Name="BleachBit" Id="BleachBit.BleachBit" />
       <App Name="CCleaner" Id="Piriform.CCleaner.ProTrial" />
