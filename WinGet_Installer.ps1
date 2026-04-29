@@ -924,10 +924,33 @@ $timer.Add_Tick({
                 Check-Upgrades
             }
             # --- FETCH INSTALLED PACKAGES FOR BACKUP ---
+            elseif ($script:activeOperation -eq "FetchInstalledList") {
+                $txtChecklistStatus.Text = "Generating export file (Async)..."
+                $tempExportPath = "$env:TEMP\winget_temp_export.json"
+                if (Test-Path $tempExportPath) { Remove-Item -Path $tempExportPath -Force -ErrorAction SilentlyContinue }
+                Start-AsyncProcess "export -o `"$tempExportPath`"" "FetchInstalled" $null
+            }
+            # --- PARSE EXPORT & MATCH NAMES ---
             elseif ($script:activeOperation -eq "FetchInstalled") {
                 $timer.Stop()
                 $pbInstall.IsIndeterminate = $false
                 $tempExportPath = "$env:TEMP\winget_temp_export.json"
+                $tempListPath = "$env:TEMP\winget_installed_list.tmp"
+
+                # Build dictionary of ID -> Name from winget list
+                $nameMap = @{}
+                if (Test-Path $tempListPath) {
+                    $listLines = Get-Content $tempListPath -Encoding UTF8
+                    foreach ($line in $listLines) {
+                        if ($line -match "^\s*Name\s+Id" -or $line -match "^-+" -or [string]::IsNullOrWhiteSpace($line)) { continue }
+                        $parts = $line -split "\s{2,}"
+                        if ($parts.Count -ge 2) {
+                            $mappedName = $parts[0].Trim()
+                            $mappedId = $parts[1].Trim()
+                            $nameMap[$mappedId] = $mappedName
+                        }
+                    }
+                }
 
                 if (Test-Path $tempExportPath) {
                     try {
@@ -942,9 +965,15 @@ $timer.Add_Tick({
                                     foreach ($pkg in $source.Packages) {
                                         $pkgId = $pkg.PackageIdentifier
                                         $foundName = $pkgId
-                                        # We're matching names via RepoCache
-                                        $cacheMatch = $script:RepoCache | Where-Object { $_.Id -eq $pkgId } | Select-Object -First 1
-                                        if ($cacheMatch) { $foundName = $cacheMatch.Name }
+
+                                        # 1. Match from our exact installed list
+                                        if ($nameMap.ContainsKey($pkgId)) {
+                                            $foundName = $nameMap[$pkgId]
+                                        } else {
+                                            # 2. Fallback to general RepoCache if not found
+                                            $cacheMatch = $script:RepoCache | Where-Object { $_.Id -eq $pkgId } | Select-Object -First 1
+                                            if ($cacheMatch) { $foundName = $cacheMatch.Name }
+                                        }
 
                                         $obj = New-Object PSObject
                                         $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $true
@@ -956,6 +985,8 @@ $timer.Add_Tick({
                                 }
                             }
                         }
+
+                        # Sort alphabetically by Name
                         $installedList = $installedList | Sort-Object Name
                         $lvInstalledPackages.ItemsSource = $installedList
                         $txtChecklistStatus.Text = "Loaded $($installedList.Count) installed packages."
@@ -1213,15 +1244,15 @@ $btnBackup.Add_Click({
     # Switch UI view
     $pnlBackupWelcome.Visibility = "Collapsed"
     $pnlBackupChecklist.Visibility = "Visible"
-    $txtChecklistStatus.Text = "Fetching installed packages (Async)..."
+    $txtChecklistStatus.Text = "Fetching installed names (Async)..."
     $lvInstalledPackages.ItemsSource = $null
     $btnBackupSelected.IsEnabled = $false
     $chkSelectAllBackup.IsChecked = $true
 
-    # Start background process
-    $tempExportPath = "$env:TEMP\winget_temp_export.json"
-    if (Test-Path $tempExportPath) { Remove-Item -Path $tempExportPath -Force -ErrorAction SilentlyContinue }
-    Start-AsyncProcess "export -o `"$tempExportPath`"" "FetchInstalled" $null
+    # Start background process 1: Fetch exact names via winget list
+    $tempListPath = "$env:TEMP\winget_installed_list.tmp"
+    if (Test-Path $tempListPath) { Remove-Item -Path $tempListPath -Force -ErrorAction SilentlyContinue }
+    Start-AsyncProcess "list" "FetchInstalledList" $tempListPath
 })
 
 $btnBackToBackupWelcome.Add_Click({
