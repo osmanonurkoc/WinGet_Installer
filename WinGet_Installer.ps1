@@ -126,6 +126,7 @@ $script:activeOperation = ""
 $script:InstallQueue = @()
 $script:CurrentInstallItem = $null
 $script:PinnedApps = @()
+$script:originalExportJson = $null
 
 # --- TIMER (ASYNC EVENT LOOP) ---
 $timer = New-Object System.Windows.Threading.DispatcherTimer
@@ -617,15 +618,65 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(200)
                         </Button>
                     </Grid>
 
-                    <Grid Name="viewBackup" Visibility="Collapsed">
+                <Grid Name="viewBackup" Visibility="Collapsed">
+                    <Grid Name="pnlBackupWelcome" Visibility="Visible">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                             <ContentControl Content="{StaticResource IconBackup}" Width="80" Height="80" Margin="0,0,0,20"/>
-                             <TextBlock Text="Backup &amp; Restore" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,30"/>
-                             <Button Name="btnBackup" Content="EXPORT INSTALLED PACKAGES (JSON)" Width="350" Height="60" Margin="0,0,0,20" Style="{StaticResource FluentButton}" FontSize="16"/>
-                             <Button Name="btnRestore" Content="IMPORT &amp; RESTORE FROM FILE" Width="350" Height="60" Style="{StaticResource FluentButton}" FontSize="16"/>
-                             <TextBlock Name="txtBackupStatus" Text="Ready." Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                            <ContentControl Content="{StaticResource IconBackup}" Width="80" Height="80" Margin="0,0,0,20"/>
+                            <TextBlock Text="Backup &amp; Restore" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+                            <Button Name="btnBackup" Content="EXPORT INSTALLED PACKAGES (JSON)" Width="350" Height="60" Margin="0,0,0,20" Style="{StaticResource FluentButton}" FontSize="16"/>
+                            <Button Name="btnRestore" Content="IMPORT &amp; RESTORE FROM FILE" Width="350" Height="60" Style="{StaticResource FluentButton}" FontSize="16"/>
+                            <TextBlock Name="txtBackupStatus" Text="Ready." Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,20,0,0"/>
                         </StackPanel>
                     </Grid>
+
+                    <Grid Name="pnlBackupChecklist" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/> <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/> <ColumnDefinition Width="*"/> <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Name="btnBackToBackupWelcome" Content="← Back" Style="{StaticResource FluentButton}" Width="80" Margin="0,0,15,0" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Select Packages to Backup" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                </StackPanel>
+                                <CheckBox Name="chkSelectAllBackup" Content="Select All" Grid.Column="2" VerticalAlignment="Center" IsChecked="True"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <ListView Name="lvInstalledPackages" Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextPrimary}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Select" Width="60">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Name" Width="300" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Package ID" Width="250" DisplayMemberBinding="{Binding Id}"/>
+                                    <GridViewColumn Header="Source" Width="120" DisplayMemberBinding="{Binding Source}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <StackPanel Grid.Row="2" Margin="0,15,0,0">
+                            <TextBlock Name="txtChecklistStatus" Text="Ready." Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <Button Name="btnBackupSelected" Style="{StaticResource InstallButtonStyle}" Content="EXPORT SELECTED TO JSON"
+                                FontWeight="Bold" Background="{DynamicResource Accent}"
+                                Foreground="{DynamicResource ButtonTextForeground}"
+                                FontSize="14" Height="45" Cursor="Hand" HorizontalAlignment="Stretch">
+                                <Button.Resources>
+                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                </Button.Resources>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
                 </Grid>
             </Border>
         </Grid>
@@ -665,6 +716,13 @@ $btnInstallSearch = $window.FindName("btnInstallSearch")
 $btnBackup = $window.FindName("btnBackup")
 $btnRestore = $window.FindName("btnRestore")
 $txtBackupStatus = $window.FindName("txtBackupStatus")
+$pnlBackupWelcome = $window.FindName("pnlBackupWelcome")
+$pnlBackupChecklist = $window.FindName("pnlBackupChecklist")
+$btnBackToBackupWelcome = $window.FindName("btnBackToBackupWelcome")
+$chkSelectAllBackup = $window.FindName("chkSelectAllBackup")
+$lvInstalledPackages = $window.FindName("lvInstalledPackages")
+$txtChecklistStatus = $window.FindName("txtChecklistStatus")
+$btnBackupSelected = $window.FindName("btnBackupSelected")
 $txtStatusFooter = $window.FindName("txtStatusFooter")
 $pbInstall = $window.FindName("pbInstall")
 $btnThemeToggle = $window.FindName("btnThemeToggle")
@@ -864,6 +922,50 @@ $timer.Add_Tick({
                 $pbInstall.IsIndeterminate = $false
                 $txtStatusFooter.Text = "Upgrade All Completed."
                 Check-Upgrades
+            }
+            # --- FETCH INSTALLED PACKAGES FOR BACKUP ---
+            elseif ($script:activeOperation -eq "FetchInstalled") {
+                $timer.Stop()
+                $pbInstall.IsIndeterminate = $false
+                $tempExportPath = "$env:TEMP\winget_temp_export.json"
+
+                if (Test-Path $tempExportPath) {
+                    try {
+                        $jsonContent = Get-Content $tempExportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                        $script:originalExportJson = $jsonContent
+                        $installedList = @()
+
+                        if ($jsonContent.Sources) {
+                            foreach ($source in $jsonContent.Sources) {
+                                $sName = if ($source.SourceDetails.Name) { $source.SourceDetails.Name } else { "winget" }
+                                if ($source.Packages) {
+                                    foreach ($pkg in $source.Packages) {
+                                        $pkgId = $pkg.PackageIdentifier
+                                        $foundName = $pkgId
+                                        # We're matching names via RepoCache
+                                        $cacheMatch = $script:RepoCache | Where-Object { $_.Id -eq $pkgId } | Select-Object -First 1
+                                        if ($cacheMatch) { $foundName = $cacheMatch.Name }
+
+                                        $obj = New-Object PSObject
+                                        $obj | Add-Member -MemberType NoteProperty -Name "IsSelected" -Value $true
+                                        $obj | Add-Member -MemberType NoteProperty -Name "Name" -Value $foundName
+                                        $obj | Add-Member -MemberType NoteProperty -Name "Id" -Value $pkgId
+                                        $obj | Add-Member -MemberType NoteProperty -Name "Source" -Value $sName
+                                        $installedList += $obj
+                                    }
+                                }
+                            }
+                        }
+                        $installedList = $installedList | Sort-Object Name
+                        $lvInstalledPackages.ItemsSource = $installedList
+                        $txtChecklistStatus.Text = "Loaded $($installedList.Count) installed packages."
+                        $btnBackupSelected.IsEnabled = $true
+                    } catch {
+                        $txtChecklistStatus.Text = "Failed to parse installed packages."
+                    }
+                } else {
+                    $txtChecklistStatus.Text = "No packages found or export failed."
+                }
             }
             # --- BACKUP ---
             elseif ($script:activeOperation -eq "Backup") {
@@ -1106,10 +1208,83 @@ $cmUnpin.Add_Click({
 })
 
 $btnBackup.Add_Click({
-    $sfd = New-Object System.Windows.Forms.SaveFileDialog; $sfd.Filter = "JSON|*.json"; $sfd.FileName = "backup.json"
+    if ($script:activeProcess) { return }
+
+    # Switch UI view
+    $pnlBackupWelcome.Visibility = "Collapsed"
+    $pnlBackupChecklist.Visibility = "Visible"
+    $txtChecklistStatus.Text = "Fetching installed packages (Async)..."
+    $lvInstalledPackages.ItemsSource = $null
+    $btnBackupSelected.IsEnabled = $false
+    $chkSelectAllBackup.IsChecked = $true
+
+    # Start background process
+    $tempExportPath = "$env:TEMP\winget_temp_export.json"
+    if (Test-Path $tempExportPath) { Remove-Item -Path $tempExportPath -Force -ErrorAction SilentlyContinue }
+    Start-AsyncProcess "export -o `"$tempExportPath`"" "FetchInstalled" $null
+})
+
+$btnBackToBackupWelcome.Add_Click({
+    $pnlBackupChecklist.Visibility = "Collapsed"
+    $pnlBackupWelcome.Visibility = "Visible"
+    $txtStatusFooter.Text = "Waiting..."
+})
+
+$chkSelectAllBackup.Add_Click({
+    $val = $this.IsChecked
+    if ($lvInstalledPackages.ItemsSource) {
+        foreach ($item in $lvInstalledPackages.ItemsSource) {
+            $item.IsSelected = $val
+        }
+        $lvInstalledPackages.Items.Refresh()
+    }
+})
+
+$btnBackupSelected.Add_Click({
+    if (-not $script:originalExportJson -or -not $lvInstalledPackages.ItemsSource) {
+        [System.Windows.Forms.MessageBox]::Show("Please load installed packages first.", "Warning", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        return
+    }
+
+    $selectedIds = @()
+    foreach ($item in $lvInstalledPackages.ItemsSource) {
+        if ($item.IsSelected) { $selectedIds += $item.Id }
+    }
+
+    if ($selectedIds.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("No packages selected for export.", "Warning", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        return
+    }
+
+    $sfd = New-Object System.Windows.Forms.SaveFileDialog
+    $sfd.Filter = "JSON|*.json"
+    $sfd.FileName = "winget_backup.json"
     if ($sfd.ShowDialog() -eq "OK") {
-        $txtBackupStatus.Text = "Exporting (Async)..."
-        Start-AsyncProcess "export -o `"$($sfd.FileName)`"" "Backup" $null
+        try {
+            $txtChecklistStatus.Text = "Saving selected packages..."
+            $exportData = Get-Content "$env:TEMP\winget_temp_export.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+
+            foreach ($source in $exportData.Sources) {
+                $filteredPackages = @()
+                if ($source.Packages) {
+                    foreach ($pkg in $source.Packages) {
+                        if ($selectedIds -contains $pkg.PackageIdentifier) {
+                            $filteredPackages += $pkg
+                        }
+                    }
+                }
+                $source.Packages = @($filteredPackages)
+            }
+
+            $exportData.Sources = @($exportData.Sources | Where-Object { $_.Packages.Count -gt 0 })
+            $exportData | ConvertTo-Json -Depth 10 | Set-Content $sfd.FileName -Encoding UTF8
+
+            $txtChecklistStatus.Text = "Successfully exported $($selectedIds.Count) packages."
+            [System.Windows.Forms.MessageBox]::Show("Backup successfully saved!", "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        } catch {
+            $txtChecklistStatus.Text = "Error saving backup file."
+            [System.Windows.Forms.MessageBox]::Show("Failed to save backup: $_", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+        }
     }
 })
 
