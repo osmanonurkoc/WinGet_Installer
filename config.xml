@@ -41,6 +41,7 @@
       <App Name="Replit" Id="Replit.Replit" />
       <App Name="Windsurf" Id="Codeium.Windsurf" />
       <App Name="Cursor" Id="Anysphere.Cursor" />
+      <App Name="AutoHotkey" Id="AutoHotkey.AutoHotkey" />
       <App Name="Anaconda3" Id="Anaconda.Anaconda3" />
       <App Name="VS Code" Id="Microsoft.VisualStudioCode" />
       <App Name="Visual Studio Community 2026" Id="Microsoft.VisualStudio.Community" />
@@ -68,6 +69,7 @@
     </Category>
 
     <Category Name="Graphics">
+      <App Name="Adobe Creative Cloud" Id="Adobe.CreativeCloud" />
       <App Name="ComfyUI" Id="Comfy.ComfyUI-Desktop" />
       <App Name="Converseen" Id="Faster3ck.Converseen" />
       <App Name="GIMP (Stable)" Id="GIMP.GIMP.3" />
@@ -131,9 +133,17 @@
       <App Name="Firefox" Id="Mozilla.Firefox" />
       <App Name="Tor Browser" Id="TorProject.TorBrowser" />
       <App Name="Vivaldi" Id="Vivaldi.Vivaldi" />
+      <App Name="Dropbox" Id="Dropbox.Dropbox" />
       <App Name="Google Drive" Id="Google.GoogleDrive" />
       <App Name="Megasync" Id="Mega.MEGASync" />
       <App Name="Microsoft OneDrive" Id="Microsoft.OneDrive" />
+      <App Name="Arroxy" Id="AntonioOrionus.Arroxy" />
+      <App Name="OnTheSpot" Id="Justin025.OnTheSpot" />
+      <App Name="Free Download Manager" Id="SoftDeluxe.FreeDownloadManager" />
+      <App Name="Internet Download Manager" Id="Tonec.InternetDownloadManager" />
+      <App Name="MotrixNext" Id="AnInsomniacy.MotrixNext" />
+      <App Name="Neat Download Manager" Id="JavadMotallebi.NeatDownloadManager" />
+      <App Name="Persepolis Download Manager" Id="PersepolisDownloadManager.Persepolis" />
       <App Name="Xtreme Download Manager" Id="subhra74.XtremeDownloadManager.Beta" />
       <App Name="qBittorrent" Id="qBittorrent.qBittorrent" />
       <App Name="qBittorrent Enhanced" Id="c0re100.qBittorrent-Enhanced-Edition" />
@@ -152,6 +162,7 @@
       <App Name="Zoom" Id="Zoom.Zoom" />
       <App Name="Telegram Desktop" Id="Telegram.TelegramDesktop" />
       <App Name="WhatsApp" Id="9NKSQGP7F2NH" />
+      <App Name="Tweeten" Id="MehediHassan.Tweeten" />
       <App Name="Microsoft Teams" Id="Microsoft.Teams" />
     </Category>
 
@@ -160,6 +171,7 @@
       <App Name="QEMU" Id="SoftwareFreedomConservancy.QEMU" />
       <App Name="BlueStacks" Id="BlueStack.BlueStacks" />
       <App Name="Docker Desktop" Id="Docker.DockerDesktop" />
+      <App Name="Sandboxie-Plus" Id="Sandboxie.Plus" />
       <App Name="XAMPP 8.2" Id="ApacheFriends.Xampp.8.2" />
       <App Name="NVIDIA Omniverse" Id="Nvidia.Omniverse" />
     </Category>
@@ -234,7 +246,11 @@
       <App Name="gsudo" Id="gerardog.gsudo" />
       <App Name="neofetch-win" Id="nepnep.neofetch-win" />
       <App Name="starship" Id="Starship.Starship" />
+      <App Name="EarTrumpet" Id="File-New-Project.EarTrumpet" />
       <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
+      <App Name="Open-Shell" Id="Open-Shell.Open-Shell-Menu" />
+      <App Name="StartAllBack" Id="StartIsBack.StartAllBack" />
+      <App Name="StartIsBack++" Id="StartIsBack.StartIsBack" />
       <App Name="Windhawk" Id="RamenSoftware.Windhawk" />
       <App Name="Mica For Everyone" Id="MicaForEveryone.MicaForEveryone" />
       <App Name="Yasb" Id="AmN.yasb" />
