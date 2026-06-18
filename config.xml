@@ -244,7 +244,7 @@
     <Category Name="Miscellaneous">
       <App Name="PowerShell 7-x64" Id="Microsoft.PowerShell --installer-type wix --source winget --scope machine" />
       <App Name="gsudo" Id="gerardog.gsudo" />
-      <App Name="neofetch-win" Id="nepnep.neofetch-win" />
+      <App Name="FastFetch" Id="Fastfetch-cli.Fastfetch" />
       <App Name="starship" Id="Starship.Starship" />
       <App Name="EarTrumpet" Id="File-New-Project.EarTrumpet" />
       <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
