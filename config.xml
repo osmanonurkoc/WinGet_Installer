@@ -12,7 +12,7 @@
       <App Name="DeskFlow" Id="Deskflow.Deskflow" />
       <App Name="7-Zip" Id="7zip.7zip" />
       <App Name="BleachBit" Id="BleachBit.BleachBit" />
-      <App Name="CCleaner" Id="Piriform.CCleaner.ProTrial" />
+      <App Name="CCleaner" Id="Piriform.CCleaner" />
       <App Name="CPUID CPU-Z" Id="CPUID.CPU-Z" />
       <App Name="GNU Nano" Id="GNU.Nano" />
       <App Name="KDE Connect" Id="KDE.KDEConnect" />
