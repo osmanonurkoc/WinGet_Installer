@@ -100,6 +100,7 @@
       <App Name="K-Lite Codec Pack Standard" Id="CodecGuide.K-LiteCodecPack.Standard" />
       <App Name="K-Lite Codec Pack Full" Id="CodecGuide.K-LiteCodecPack.Full" />
       <App Name="K-Lite Codec Pack Mega" Id="CodecGuide.K-LiteCodecPack.Mega" />
+      <App Name="Kodi" Id="XBMCFoundation.Kodi" />
       <App Name="Shotcut" Id="Meltytech.Shotcut" />
       <App Name="Kdenlive" Id="KDE.Kdenlive" />
       <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
