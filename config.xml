@@ -5,194 +5,374 @@
 
   <WingetApps>
     <Category Name="Utilities">
+      <!-- Remote Access -->
       <App Name="AnyDesk" Id="AnyDesk.AnyDesk" />
-      <App Name="AnyBurn" Id="PowerSoftware.AnyBurn" />
-      <App Name="BitWarden" Id="BitWarden.BitWarden" />
+      <App Name="TeamViewer" Id="TeamViewer.TeamViewer" />
       <App Name="Chrome Remote Desktop Host" Id="Google.ChromeRemoteDesktopHost" />
       <App Name="DeskFlow" Id="Deskflow.Deskflow" />
+      <App Name="Scrcpy" Id="Genymobile.scrcpy" />
+      <App Name="Scrcpy GUI" Id="pizi.scrcpygui" />
+
+      <!-- Archiving -->
       <App Name="7-Zip" Id="7zip.7zip" />
-      <App Name="BleachBit" Id="BleachBit.BleachBit" />
-      <App Name="CCleaner" Id="Piriform.CCleaner" />
-      <App Name="CPUID CPU-Z" Id="CPUID.CPU-Z" />
-      <App Name="GNU Nano" Id="GNU.Nano" />
-      <App Name="KDE Connect" Id="KDE.KDEConnect" />
-      <App Name="Meld" Id="Meld.Meld" />
       <App Name="NanaZip" Id="M2Team.NanaZip" />
       <App Name="WinRAR" Id="RARLab.WinRAR" />
-      <App Name="PowerToys" Id="Microsoft.PowerToys" />
-      <App Name="Quick Share from Google" Id="Google.QuickShare" />
+
+      <!-- Disk & USB -->
       <App Name="Rufus" Id="Rufus.Rufus" />
       <App Name="Ventoy" Id="Ventoy.Ventoy" />
-      <App Name="PowerISO" Id="PowerSoftware.PowerISO" />
-      <App Name="WinDirStat" Id="WinDirStat.WinDirStat" />
-      <App Name="Windows Terminal" Id="Microsoft.WindowsTerminal" />
+      <App Name="UNetbootin" Id="unetbootin.unetbootin" />
       <App Name="balenaEtcher" Id="Balena.Etcher" />
-      <App Name="TeamViewer" Id="TeamViewer.TeamViewer" />
-      <App Name="WinSCP" Id="WinSCP.WinSCP" />
-      <App Name="Everything" Id="voidtools.Everything" />
-      <App Name="TreeSize Free" Id="JAMSoftware.TreeSize.Free" />
+      <App Name="AnyBurn" Id="PowerSoftware.AnyBurn" />
+      <App Name="PowerISO" Id="PowerSoftware.PowerISO" />
+
+      <!-- Maintenance -->
+      <App Name="BleachBit" Id="BleachBit.BleachBit" />
+      <App Name="CCleaner" Id="Piriform.CCleaner" />
+      <App Name="Revo Uninstaller" Id="RevoUninstaller.RevoUninstaller" />
+      <App Name="Recuva" Id="Piriform.Recuva" />
+
+      <!-- System Info -->
+      <App Name="AIDA64" Id="9NBLGGH2WNWH" />
+      <App Name="CPUID CPU-Z" Id="CPUID.CPU-Z" />
       <App Name="HWMonitor" Id="CPUID.HWMonitor" />
       <App Name="HWiNFO" Id="REALiX.HWiNFO" />
-      <App Name="Revo Uninstaller" Id="RevoUninstaller.RevoUninstaller" />
+      <App Name="System Informer" Id="WinsiderSS.SystemInformer" />
+      <App Name="Sysinternals Suite" Id="Microsoft.Sysinternals.Suite" />
+
+      <!-- File Management -->
+      <App Name="WinDirStat" Id="WinDirStat.WinDirStat" />
+      <App Name="TreeSize Free" Id="JAMSoftware.TreeSize.Free" />
+      <App Name="Everything" Id="voidtools.Everything" />
+      <App Name="TeraCopy" Id="CodeSector.TeraCopy" />
+
+      <!-- File Transfer -->
+      <App Name="KDE Connect" Id="KDE.KDEConnect" />
+      <App Name="LocalSend" Id="LocalSend.LocalSend" />
+      <App Name="Quick Share from Google" Id="Google.QuickShare" />
+      <App Name="WinSCP" Id="WinSCP.WinSCP" />
+
+      <!-- Security -->
+      <App Name="AdGuard" Id="AdGuard.AdGuard" />
+      <App Name="BitWarden" Id="BitWarden.BitWarden" />
+      <App Name="KeePass" Id="DominikReichl.KeePass" />
+      <App Name="KeePassXC" Id="KeePassXCTeam.KeePassXC" />
+      <App Name="LastPass" Id="LastPass.LastPass" />
+      <App Name="Proton Authenticator" Id="Proton.ProtonAuthenticator" />
+      <App Name="Proton Pass" Id="Proton.ProtonPass" />
+
+      <!-- CLI & Editors -->
+      <App Name="GNU Nano" Id="GNU.Nano" />
+      <App Name="Micro" Id="zyedidia.micro" />
+      <App Name="Vim" Id="vim.vim" />
+      <App Name="Meld" Id="Meld.Meld" />
+
+      <!-- Utilities -->
+      <App Name="PowerToys" Id="Microsoft.PowerToys" />
+      <App Name="OpenRGB" Id="OpenRGB.OpenRGB" />
     </Category>
 
     <Category Name="Development">
+      <!-- IDEs & Editors -->
       <App Name="Google Antigravity" Id="Google.Antigravity" />
       <App Name="Replit" Id="Replit.Replit" />
       <App Name="Windsurf" Id="Codeium.Windsurf" />
       <App Name="Cursor" Id="Anysphere.Cursor" />
-      <App Name="AutoHotkey" Id="AutoHotkey.AutoHotkey" />
-      <App Name="Anaconda3" Id="Anaconda.Anaconda3" />
       <App Name="VS Code" Id="Microsoft.VisualStudioCode" />
       <App Name="Visual Studio Community 2026" Id="Microsoft.VisualStudio.Community" />
-      <App Name="Git Extensions" Id="GitExtensionsTeam.GitExtensions" />
+      <App Name="JetBrains Toolbox" Id="JetBrains.Toolbox" />
+      <App Name="JetBrains Rider" Id="JetBrains.Rider" />
+
+      <!-- Version Control -->
       <App Name="Git" Id="Git.Git" />
       <App Name="GitHub CLI" Id="GitHub.cli" />
       <App Name="GitHub Desktop" Id="GitHub.GitHubDesktop" />
+      <App Name="Git Extensions" Id="GitExtensionsTeam.GitExtensions" />
       <App Name="Fork (Git Client)" Id="Fork.Fork" />
+
+      <!-- Languages & Runtimes -->
       <App Name="Java 8 RE" Id="Oracle.JavaRuntimeEnvironment" />
-      <App Name="Java SE" Id="Oracle.JDK.25" /> <App Name="Node JS" Id="OpenJS.NodeJS" />
-      <App Name="JetBrains Toolbox" Id="JetBrains.Toolbox" />
-      <App Name="JetBrains Rider" Id="JetBrains.Rider" />
-      <App Name="AutoIt" Id="AutoIt.AutoIt" />
-      <App Name="Python Launcher" Id="Python.Launcher" />
-      <App Name="APK Editor Studio" Id="AlexanderGorishnyak.APKEditorStudio" />
-      <App Name="Inno Setup" Id="JRSoftware.InnoSetup" />
-      <App Name="Unity" Id="Unity.Unity.2022" />
-      <App Name="Unity Hub" Id="Unity.UnityHub" />
-      <App Name="Godot Engine" Id="GodotEngine.GodotEngine" />
-      <App Name="Resource Hacker" Id="AngusJohnson.ResourceHacker" />
-      <App Name="Postman" Id="Postman.Postman" />
-      <App Name="CMake" Id="Kitware.CMake" />
+      <App Name="Java SE" Id="Oracle.JDK.25" />
       <App Name="Java SE 21 (LTS)" Id="Oracle.JDK.21" />
       <App Name="Python 3.12" Id="Python.Python.3.12" />
+      <App Name="Python Launcher" Id="Python.Launcher" />
+      <App Name="Anaconda3" Id="Anaconda.Anaconda3" />
+      <App Name="Node JS" Id="OpenJS.NodeJS" />
+      <App Name="Microsoft .NET SDK 3.1" Id="Microsoft.DotNet.SDK.3_1" />
+      <App Name="Microsoft .NET SDK 5" Id="Microsoft.DotNet.SDK.5" />
+      <App Name="Microsoft .NET SDK 6" Id="Microsoft.DotNet.SDK.6" />
+      <App Name="Microsoft .NET SDK 7" Id="Microsoft.DotNet.SDK.7" />
+      <App Name="Microsoft .NET SDK 8" Id="Microsoft.DotNet.SDK.8" />
+      <App Name="Microsoft .NET SDK 9" Id="Microsoft.DotNet.SDK.9" />
+      <App Name="Microsoft .NET SDK 10" Id="Microsoft.DotNet.SDK.10" />
+      <App Name="Microsoft .NET SDK Preview" Id="Microsoft.DotNet.SDK.Preview" />
+      <App Name="OpenJDK 17 (LTS)" Id="Microsoft.OpenJDK.17" />
+
+      <!-- Game Engines -->
+      <App Name="Unity Hub" Id="Unity.UnityHub" />
+      <App Name="Unity" Id="Unity.Unity.2022" />
+      <App Name="Godot Engine" Id="GodotEngine.GodotEngine" />
+
+      <!-- Build & Packaging -->
+      <App Name="CMake" Id="Kitware.CMake" />
+      <App Name="Inno Setup" Id="JRSoftware.InnoSetup" />
+      <App Name="APK Editor Studio" Id="AlexanderGorishnyak.APKEditorStudio" />
+      <App Name="Resource Hacker" Id="AngusJohnson.ResourceHacker" />
+
+      <!-- Automation -->
+      <App Name="AutoIt" Id="AutoIt.AutoIt" />
+      <App Name="AutoHotkey" Id="AutoHotkey.AutoHotkey" />
     </Category>
 
     <Category Name="Graphics">
+      <!-- Creative Suites -->
       <App Name="Adobe Creative Cloud" Id="Adobe.CreativeCloud" />
-      <App Name="ComfyUI" Id="Comfy.ComfyUI-Desktop" />
-      <App Name="Converseen" Id="Faster3ck.Converseen" />
+      <App Name="Affinity" Id="Canva.Affinity" />
+      <App Name="Canva" Id="Canva.Canva" />
+
+      <!-- Image Editors -->
       <App Name="GIMP (Stable)" Id="GIMP.GIMP.3" />
       <App Name="GIMP (Nightly)" Id="GIMP.GIMP.Nightly" />
-      <App Name="Inkscape" Id="Inkscape.Inkscape" />
       <App Name="Krita" Id="KDE.Krita" />
-      <App Name="Blender" Id="BlenderFoundation.Blender" />
-      <App Name="IcoFX" Id="IcoFXSoftware.icofx" />
       <App Name="Paint.NET" Id="dotPDN.PaintDotNet" />
+      <App Name="Pinta" Id="Pinta.Pinta" />
+
+      <!-- Vector & UI Design -->
+      <App Name="Inkscape" Id="Inkscape.Inkscape" />
       <App Name="Figma" Id="Figma.Figma" />
+      <App Name="IcoFX" Id="IcoFXSoftware.icofx" />
+
+      <!-- Photo & RAW Editors -->
+      <App Name="Darktable" Id="darktable.darktable" />
+      <App Name="RapidRAW" Id="CyberTimon.RapidRAW" />
+      <App Name="digiKam" Id="KDE.digiKam" />
+
+      <!-- 3D Modeling & CAD -->
+      <App Name="Blender" Id="BlenderFoundation.Blender" />
+      <App Name="Autodesk Fusion" Id="Autodesk.Fusion" />
+      <App Name="Autodesk Access" Id="Autodesk.AutodeskAccess" />
+      <App Name="SketchUp 2026" Id="Trimble.SketchUp.2026" />
+      <App Name="LibreCAD" Id="LibreCAD.LibreCAD" />
+
+      <!-- Image Viewers & Converters -->
       <App Name="ImageGlass" Id="DuongDieuPhap.ImageGlass" />
       <App Name="IrfanView" Id="IrfanSkiljan.IrfanView" />
       <App Name="IrfanView PlugIns" Id="IrfanSkiljan.IrfanView.PlugIns" />
+      <App Name="Converseen" Id="Faster3ck.Converseen" />
+
+      <!-- Screenshots -->
       <App Name="ShareX" Id="ShareX.ShareX" />
+      <App Name="Flameshot" Id="Flameshot.Flameshot" />
       <App Name="PicPick" Id="NGWIN.PicPick" />
-	  <App Name="LibreCAD" Id="LibreCAD.LibreCAD" />
-      <App Name="Autodesk Access" Id="Autodesk.AutodeskAccess" />
+
+      <!-- Animation & AI -->
+      <App Name="Canva Cavalry" Id="Canva.Cavalry" />
+      <App Name="ComfyUI" Id="Comfy.ComfyUI-Desktop" />
     </Category>
 
     <Category Name="Media">
+      <!-- Audio Players & Streaming -->
       <App Name="AIMP" Id="AIMP.AIMP" />
       <App Name="Amarok" Id="KDE.Amarok" />
       <App Name="Elisa" Id="KDE.Elisa" />
-      <App Name="Audacity" Id="Audacity.Audacity" />
       <App Name="Clementine" Id="Clementine.Clementine" />
+      <App Name="Spotify" Id="Spotify.Spotify" />
+      <App Name="iTunes" Id="Apple.iTunes" />
+
+      <!-- Audio, Video Tools -->
+      <App Name="Audacity" Id="Audacity.Audacity" />
+      <App Name="MP3Tag" Id="FlorianHeidenreich.Mp3tag" />
+      <App Name="MKVToolNix" Id="MoritzBunkus.MKVToolNix" />
+
+      <!-- Video Players -->
+      <App Name="VLC media player" Id="VideoLAN.VLC" />
+      <App Name="PotPlayer" Id="Daum.PotPlayer" />
+      <App Name="GOM Player" Id="GOMLab.GOMPlayer" />
+      <App Name="Haruna" Id="KDE.Haruna" />
+
+      <!-- Video Editors -->
+      <App Name="Kdenlive" Id="KDE.Kdenlive" />
+      <App Name="Shotcut" Id="Meltytech.Shotcut" />
+      <App Name="OpenShot" Id="OpenShot.OpenShot" />
+
+      <!-- Video Streaming -->
+      <App Name="Stremio" Id="Stremio.Stremio" />
+      <App Name="Netflix" Id="9WZDNCRFJ3TJ" />
+      <App Name="Popcorn Time" Id="PopcornTime.Popcorn-Time" />
+
+      <!-- Media Servers & Centers -->
+      <App Name="Kodi" Id="XBMCFoundation.Kodi" />
+      <App Name="Jellyfin Server" Id="Jellyfin.Server" />
+      <App Name="Jellyfin Media Player" Id="Jellyfin.JellyfinMediaPlayer" />
+      <App Name="Jellyfin FFmpeg" Id="Jellyfin.FFmpeg" />
+
+      <!-- Broadcasting & Recording -->
+      <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
+
+      <!-- Codecs & Converters -->
+      <App Name="FFmpeg" Id="Gyan.FFmpeg" />
       <App Name="HandBrake" Id="HandBrake.HandBrake" />
       <App Name="K-Lite Codec Pack Basic" Id="CodecGuide.K-LiteCodecPack.Basic" />
       <App Name="K-Lite Codec Pack Standard" Id="CodecGuide.K-LiteCodecPack.Standard" />
       <App Name="K-Lite Codec Pack Full" Id="CodecGuide.K-LiteCodecPack.Full" />
       <App Name="K-Lite Codec Pack Mega" Id="CodecGuide.K-LiteCodecPack.Mega" />
-      <App Name="Kodi" Id="XBMCFoundation.Kodi" />
-      <App Name="Shotcut" Id="Meltytech.Shotcut" />
-      <App Name="Kdenlive" Id="KDE.Kdenlive" />
-      <App Name="OBS Studio" Id="OBSProject.OBSStudio" />
-      <App Name="OpenShot" Id="OpenShot.OpenShot" />
-      <App Name="MP3Tag" Id="FlorianHeidenreich.Mp3tag" />
-      <App Name="MKVToolNix" Id="MoritzBunkus.MKVToolNix" />
-      <App Name="GOM Player" Id="GOMLab.GOMPlayer" />
-      <App Name="Haruna" Id="KDE.Haruna" />
-      <App Name="VLC media player" Id="VideoLAN.VLC" />
-      <App Name="Spotify" Id="Spotify.Spotify" />
-      <App Name="iTunes" Id="Apple.iTunes" />
-      <App Name="PotPlayer" Id="Daum.PotPlayer" />
-      <App Name="FFmpeg" Id="Gyan.FFmpeg" />
     </Category>
 
     <Category Name="Games">
-      <App Name="Epic Games Launcher" Id="EpicGames.EpicGamesLauncher" />
+      <!-- Game Launchers -->
       <App Name="Steam" Id="Valve.Steam" />
-      <App Name="Vortex" Id="NexusMods.Vortex" />
+      <App Name="Epic Games Launcher" Id="EpicGames.EpicGamesLauncher" />
       <App Name="EA App" Id="ElectronicArts.EADesktop" />
       <App Name="Ubisoft Connect" Id="Ubisoft.Connect" />
       <App Name="GOG Galaxy" Id="GOG.Galaxy" />
+      <App Name="Itch.io" Id="ItchIo.Itch" />
+
+      <!-- Alternative Launchers -->
+      <App Name="Heroic Games Launcher" Id="HeroicGamesLauncher.HeroicGamesLauncher" />
       <App Name="Prism Launcher" Id="PrismLauncher.PrismLauncher" />
+
+      <!-- Emulators -->
+      <App Name="RetroArch" Id="Libretro.RetroArch" />
+      <App Name="PCSX2" Id="PCSX2Team.PCSX2" />
       <App Name="Google Play Games" Id="Google.PlayGames.Beta" />
+
+      <!-- Modding -->
+      <App Name="Vortex" Id="NexusMods.Vortex" />
     </Category>
 
     <Category Name="Internet">
+      <!-- Web Browsers -->
       <App Name="Google Chrome" Id="Google.Chrome" />
+      <App Name="Brave Browser" Id="Brave.Brave" />
+      <App Name="Firefox" Id="Mozilla.Firefox" />
       <App Name="Opera" Id="Opera.Opera" />
       <App Name="Opera GX" Id="Opera.OperaGX" />
-      <App Name="Firefox" Id="Mozilla.Firefox" />
-      <App Name="Tor Browser" Id="TorProject.TorBrowser" />
       <App Name="Vivaldi" Id="Vivaldi.Vivaldi" />
-      <App Name="Dropbox" Id="Dropbox.Dropbox" />
+      <App Name="Zen Browser" Id="Zen-Team.Zen-Browser" />
+      <App Name="LibreWolf" Id="LibreWolf.LibreWolf" />
+      <App Name="Waterfox" Id="Waterfox.Waterfox" />
+      <App Name="Tor Browser" Id="TorProject.TorBrowser" />
+      <App Name="Mullvad Browser" Id="MullvadVPN.MullvadBrowser" />
+
+      <!-- Cloud Storage & Sync -->
       <App Name="Google Drive" Id="Google.GoogleDrive" />
-      <App Name="Megasync" Id="Mega.MEGASync" />
       <App Name="Microsoft OneDrive" Id="Microsoft.OneDrive" />
-      <App Name="Arroxy" Id="AntonioOrionus.Arroxy" />
-      <App Name="OnTheSpot" Id="Justin025.OnTheSpot" />
-      <App Name="Free Download Manager" Id="SoftDeluxe.FreeDownloadManager" />
+      <App Name="Dropbox" Id="Dropbox.Dropbox" />
+      <App Name="Megasync" Id="Mega.MEGASync" />
+      <App Name="Proton Drive" Id="Proton.ProtonDrive" />
+      <App Name="Nextcloud" Id="Nextcloud.NextcloudDesktop" />
+      <App Name="Syncthing" Id="Syncthing.Syncthing" />
+
+      <!-- Download Managers -->
       <App Name="Internet Download Manager" Id="Tonec.InternetDownloadManager" />
-      <App Name="MotrixNext" Id="AnInsomniacy.MotrixNext" />
+      <App Name="Free Download Manager" Id="SoftDeluxe.FreeDownloadManager" />
       <App Name="Neat Download Manager" Id="JavadMotallebi.NeatDownloadManager" />
       <App Name="Persepolis Download Manager" Id="PersepolisDownloadManager.Persepolis" />
       <App Name="Xtreme Download Manager" Id="subhra74.XtremeDownloadManager.Beta" />
+      <App Name="MotrixNext" Id="AnInsomniacy.MotrixNext" />
+      <App Name="OnTheSpot" Id="Justin025.OnTheSpot" />
+
+      <!-- Torrent Clients -->
       <App Name="qBittorrent" Id="qBittorrent.qBittorrent" />
       <App Name="qBittorrent Enhanced" Id="c0re100.qBittorrent-Enhanced-Edition" />
-      <App Name="Brave Browser" Id="Brave.Brave" />
+      <App Name="Transmission" Id="Transmission.Transmission" />
+      <App Name="Deluge" Id="DelugeTeam.Deluge" />
+
+      <!-- VPN & Network -->
+      <App Name="Proton VPN" Id="Proton.ProtonVPN" />
+      <App Name="Mullvad VPN" Id="MullvadVPN.MullvadVPN" />
+      <App Name="AdGuard VPN" Id="AdGuard.AdGuardVPN" />
+      <App Name="WireGuard" Id="WireGuard.WireGuard" />
+      <App Name="1.1.1.1" Id="Cloudflare.Warp" />
+      <App Name="NextDNS" Id="NextDNS.NextDNS" />
+      <App Name="Arroxy" Id="AntonioOrionus.Arroxy" />
+
+      <!-- Email Clients -->
       <App Name="Thunderbird" Id="Mozilla.Thunderbird" />
+      <App Name="Proton Mail" Id="Proton.ProtonMail" />
+
+      <!-- Bookmarks -->
+      <App Name="Raindrop.io" Id="RustemMussabekov.Raindrop" />
     </Category>
 
     <Category Name="Communication">
-      <App Name="Discord" Id="Discord.Discord" />
-      <App Name="Discord PTB" Id="Discord.Discord.PTB" />
-      <App Name="Element" Id="Element.Element" />
-      <App Name="Jitsi" Id="Jitsi.Meet" />
-      <App Name="Ferdium" Id="Ferdium.Ferdium" />
-      <App Name="Signal" Id="OpenWhisperSystems.Signal" />
-      <App Name="Slack" Id="SlackTechnologies.Slack" />
-      <App Name="Zoom" Id="Zoom.Zoom" />
+      <!-- Messaging -->
       <App Name="Telegram Desktop" Id="Telegram.TelegramDesktop" />
       <App Name="WhatsApp" Id="9NKSQGP7F2NH" />
-      <App Name="Tweeten" Id="MehediHassan.Tweeten" />
+      <App Name="Signal" Id="OpenWhisperSystems.Signal" />
+      <App Name="Element" Id="Element.Element" />
+
+      <!-- Communities & Voice -->
+      <App Name="Discord" Id="Discord.Discord" />
+      <App Name="Discord PTB" Id="Discord.Discord.PTB" />
+
+      <!-- Team Collaboration -->
+      <App Name="Slack" Id="SlackTechnologies.Slack" />
       <App Name="Microsoft Teams" Id="Microsoft.Teams" />
+
+      <!-- Video Conferences -->
+      <App Name="Zoom" Id="Zoom.Zoom" />
+      <App Name="Jitsi" Id="Jitsi.Meet" />
+      <App Name="Proton Meet" Id="Proton.ProtonMeet" />
+
+      <!-- Social & Aggregators -->
+      <App Name="Ferdium" Id="Ferdium.Ferdium" />
+      <App Name="Tweeten" Id="MehediHassan.Tweeten" />
     </Category>
 
     <Category Name="Virtualization">
+      <!-- Virtualization -->
       <App Name="Oracle VirtualBox" Id="Oracle.VirtualBox" />
       <App Name="QEMU" Id="SoftwareFreedomConservancy.QEMU" />
+
+      <!-- Emulators -->
       <App Name="BlueStacks" Id="BlueStack.BlueStacks" />
-      <App Name="Docker Desktop" Id="Docker.DockerDesktop" />
+
+      <!-- Sandboxing -->
       <App Name="Sandboxie-Plus" Id="Sandboxie.Plus" />
+
+      <!-- Containers -->
+      <App Name="Docker Desktop" Id="Docker.DockerDesktop" />
+      <App Name="Docker CLI" Id="Docker.DockerCLI" />
+
+      <!-- Web & APIs -->
       <App Name="XAMPP 8.2" Id="ApacheFriends.Xampp.8.2" />
+      <App Name="Postman" Id="Postman.Postman" />
+
+      <!-- 3D Platforms -->
       <App Name="NVIDIA Omniverse" Id="Nvidia.Omniverse" />
     </Category>
 
     <Category Name="Office">
+      <!-- Text Editors -->
       <App Name="Kate" Id="KDE.Kate" />
       <App Name="Notepad++" Id="Notepad++.Notepad++" />
-      <App Name="Joplin" Id="Joplin.Joplin" />
-      <App Name="Obsidian" Id="Obsidian.Obsidian" />
-      <App Name="MComix" Id="MComix.MComix" />
-      <App Name="Calibre" Id="calibre.calibre" />
-      <App Name="Okular" Id="KDE.Okular" />
+
+      <!-- Office Suites -->
       <App Name="OnlyOffice" Id="ONLYOFFICE.DesktopEditors" />
       <App Name="OpenOffice" Id="Apache.OpenOffice" />
       <App Name="WPS Office" Id="Kingsoft.WPSOffice" />
       <App Name="LibreOffice" Id="TheDocumentFoundation.LibreOffice" />
+
+      <!-- Notes -->
+      <App Name="Joplin" Id="Joplin.Joplin" />
+      <App Name="Obsidian" Id="Obsidian.Obsidian" />
       <App Name="Notion" Id="Notion.Notion" />
+      <App Name="Evernote" Id="Evernote.Evernote" />
+
+      <!-- Tasks -->
+      <App Name="Todoist" Id="Doist.Todoist" />
+
+      <!-- PDFs & Documents -->
+      <App Name="Okular" Id="KDE.Okular" />
       <App Name="Adobe Acrobat Reader DC" Id="Adobe.Acrobat.Reader.64-bit" />
       <App Name="Foxit PDF Reader" Id="Foxit.FoxitReader" />
       <App Name="Foxit PDF Editor" Id="Foxit.PhantomPDF.Subscription" />
+      <App Name="SumatraPDF" Id="SumatraPDF.SumatraPDF" />
+
+      <!-- E-books & Comics -->
+      <App Name="MComix" Id="MComix.MComix" />
+      <App Name="Calibre" Id="calibre.calibre" />
     </Category>
 
     <Category Name="Framework">
@@ -222,15 +402,6 @@
       <App Name="VC++ 2015-2022 x64" Id="Microsoft.VCRedist.2015+.x64" />
       <App Name="VC++ 2015-2022 x86" Id="Microsoft.VCRedist.2015+.x86" />
       <App Name="Microsoft MPI" Id="Microsoft.msmpi" />
-      <App Name="Microsoft .NET SDK 3.1" Id="Microsoft.DotNet.SDK.3_1" />
-      <App Name="Microsoft .NET SDK 5" Id="Microsoft.DotNet.SDK.5" />
-      <App Name="Microsoft .NET SDK 6" Id="Microsoft.DotNet.SDK.6" />
-      <App Name="Microsoft .NET SDK 7" Id="Microsoft.DotNet.SDK.7" />
-      <App Name="Microsoft .NET SDK 8" Id="Microsoft.DotNet.SDK.8" />
-      <App Name="Microsoft .NET SDK 9" Id="Microsoft.DotNet.SDK.9" />
-      <App Name="Microsoft .NET SDK 10" Id="Microsoft.DotNet.SDK.10" />
-      <App Name="Microsoft .NET SDK Preview" Id="Microsoft.DotNet.SDK.Preview" />
-      <App Name="OpenJDK 17 (LTS)" Id="Microsoft.OpenJDK.17" />
     </Category>
 
     <Category Name="3D Print">
@@ -243,26 +414,36 @@
     </Category>
 
     <Category Name="Miscellaneous">
+      <!-- CLI Tools -->
+      <App Name="Windows Terminal" Id="Microsoft.WindowsTerminal" />
       <App Name="PowerShell 7-x64" Id="Microsoft.PowerShell --installer-type wix --source winget --scope machine" />
       <App Name="gsudo" Id="gerardog.gsudo" />
       <App Name="FastFetch" Id="Fastfetch-cli.Fastfetch" />
       <App Name="starship" Id="Starship.Starship" />
-      <App Name="EarTrumpet" Id="File-New-Project.EarTrumpet" />
-      <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
+
+      <!-- Start Menu -->
       <App Name="Open-Shell" Id="Open-Shell.Open-Shell-Menu" />
       <App Name="StartAllBack" Id="StartIsBack.StartAllBack" />
       <App Name="StartIsBack++" Id="StartIsBack.StartIsBack" />
+
+      <!-- Desktop UI -->
+      <App Name="EarTrumpet" Id="File-New-Project.EarTrumpet" />
+      <App Name="Nilesoft Shell" Id="Nilesoft.Shell" />
       <App Name="Windhawk" Id="RamenSoftware.Windhawk" />
       <App Name="Mica For Everyone" Id="MicaForEveryone.MicaForEveryone" />
+      <App Name="Seelen UI" Id="Seelen.SeelenUI" />
+      <App Name="Rainmeter" Id="Rainmeter.Rainmeter" />
+
+      <!-- Status Bars -->
       <App Name="Yasb" Id="AmN.yasb" />
       <App Name="Zebar" Id="glzr-io.zebar" />
+
+      <!-- Window Managers -->
       <App Name="GlazeWM" Id="GlazeWM" />
       <App Name="komorebi" Id="LGUG2Z.komorebi" />
       <App Name="komokana" Id="LGUG2Z.komokana" />
       <App Name="whkd" Id="LGUG2Z.whkd" />
       <App Name="masir" Id="LGUG2Z.masir" />
-      <App Name="System Informer" Id="WinsiderSS.SystemInformer" />
-      <App Name="Sysinternals Suite" Id="Microsoft.Sysinternals.Suite" />
     </Category>
   </WingetApps>
 
