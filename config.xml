@@ -420,6 +420,7 @@
       <App Name="gsudo" Id="gerardog.gsudo" />
       <App Name="FastFetch" Id="Fastfetch-cli.Fastfetch" />
       <App Name="starship" Id="Starship.Starship" />
+      <App Name="Carapace" Id="rsteube.Carapace" />
 
       <!-- Start Menu -->
       <App Name="Open-Shell" Id="Open-Shell.Open-Shell-Menu" />
